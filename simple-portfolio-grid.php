@@ -16,12 +16,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /* ------------------------------------------------------------------
- * TEMPORARY: interim self-hosted updates via GitHub, while this
- * plugin is awaiting WordPress.org review. REMOVE this entire block
- * (and delete includes/plugin-update-checker/) before the code that
- * gets committed to the WordPress.org SVN repository — WP.org
- * guidelines do not allow a listed plugin to check for updates from
- * anywhere other than WordPress.org itself.
+ * Self-hosted updates via GitHub. To ship a new version: bump the
+ * Version header above, commit, then `git tag vX.Y.Z && git push
+ * origin main --tags`. Every site running this plugin will then see
+ * "Update Now" in wp-admin, pulling straight from this repo.
  * ---------------------------------------------------------------- */
 
 require_once plugin_dir_path( __FILE__ ) . 'includes/plugin-update-checker/plugin-update-checker.php';
