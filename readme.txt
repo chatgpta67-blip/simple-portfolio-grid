@@ -1,0 +1,66 @@
+=== Simple Portfolio Grid ===
+Contributors: pravinregi
+Tags: portfolio, gallery, projects, grid, showcase
+Requires at least: 6.0
+Tested up to: 7.1
+Requires PHP: 7.4
+Stable tag: 1.0.0
+License: GPLv2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
+
+Add projects with a title, thumbnail, content and images. Shows a responsive grid via a shortcode, and a two-column page for each project.
+
+== Description ==
+
+Simple Portfolio Grid adds a lightweight "Projects" post type to WordPress, so you can showcase work without a page builder.
+
+**Features**
+
+* A "Projects" post type with title, content, featured image, and a gallery of extra images.
+* A drag-to-reorder image picker built on the native WordPress media library — no new uploader to learn.
+* The `[portfolio]` shortcode renders a responsive grid of all projects, linking each to its own page.
+* Each project gets an automatic two-column page: images on one side, title/content on the other.
+* No settings screens, no page builder, no external services — everything runs on core WordPress APIs.
+
+**Usage**
+
+1. Add projects from the new "Projects" menu in wp-admin.
+2. Upload a featured image, write your content, and use "Add / edit images" to pick the images shown on the project's page.
+3. Place `[portfolio]` on any page to show the grid. Use `[portfolio columns="4"]` to change the number of columns (default 3).
+
+== Installation ==
+
+1. Upload the plugin folder to `/wp-content/plugins/`, or install it through Plugins → Add New in wp-admin.
+2. Activate the plugin through the 'Plugins' screen.
+3. Add your first project from the new "Projects" menu.
+4. Add the `[portfolio]` shortcode to any page to display the grid.
+
+== Frequently Asked Questions ==
+
+= How do I change the number of grid columns? =
+
+Use the `columns` attribute on the shortcode, e.g. `[portfolio columns="4"]`. It defaults to 3.
+
+= Can I customize the single-project page layout? =
+
+Yes. Copy `single-spg_project.php` from the plugin folder into your active theme's folder and edit it there — the plugin will use your theme's copy automatically.
+
+= Where does the "Back to Featured Works" link go? =
+
+It links to a page with the slug `featuredworks` if one exists, otherwise it falls back to your homepage. Developers can change the destination with the `spg_back_link_url` filter.
+
+== Screenshots ==
+
+1. The portfolio grid produced by the `[portfolio]` shortcode.
+2. A single project page with images on the left and content on the right.
+3. The image picker in the Projects editor.
+
+== Changelog ==
+
+= 1.0.0 =
+* Initial release.
+
+== Upgrade Notice ==
+
+= 1.0.0 =
+Initial release.
