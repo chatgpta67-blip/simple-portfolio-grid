@@ -4,11 +4,11 @@ Tags: portfolio, gallery, projects, grid, showcase
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Add projects with a title, thumbnail, content and images. Shows a responsive grid via a shortcode, and a two-column page for each project.
+Add projects with a title, thumbnail, content and images. Shows a Commercial/Residential tabbed grid via a shortcode, and a two-column page for each project.
 
 == Description ==
 
@@ -17,9 +17,10 @@ Simple Portfolio Grid adds a lightweight "Projects" post type to WordPress, so y
 **Features**
 
 * A "Projects" post type with title, content, featured image, and a gallery of extra images.
+* Each project is tagged Commercial or Residential; the `[portfolio]` shortcode renders both as switchable tabs.
 * A drag-to-reorder image picker built on the native WordPress media library — no new uploader to learn.
-* The `[portfolio]` shortcode renders a responsive grid of all projects, linking each to its own page.
-* Each project gets an automatic two-column page: images on one side, title/content on the other.
+* Project thumbnails and the images on each project's page have a subtle scroll-parallax effect.
+* Each project gets an automatic page: up to three images on one side, title/content on the other.
 * No settings screens, no page builder, no external services — everything runs on core WordPress APIs.
 
 **Usage**
@@ -57,10 +58,18 @@ It links to a page with the slug `featuredworks` if one exists, otherwise it fal
 
 == Changelog ==
 
+= 1.2.0 =
+* The `[portfolio]` grid is now split into Commercial and Residential tabs (new "Project Type" field on each project).
+* Grid thumbnails now have the same scroll-parallax effect as project-page images.
+
+= 1.1.0 =
+* Project pages now show up to three images per row instead of two.
+* Project-page images have a scroll-parallax effect.
+
 = 1.0.0 =
 * Initial release.
 
 == Upgrade Notice ==
 
-= 1.0.0 =
-Initial release.
+= 1.2.0 =
+Existing projects are automatically marked Commercial on update — open each project and check "Residential" where it applies.

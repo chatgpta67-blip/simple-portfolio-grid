@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Simple Portfolio Grid
  * Description:       Add projects with a title, a thumbnail, content and images. Shows a responsive grid via the [portfolio] shortcode, and a two-column page for each project (images left, text right).
- * Version:           1.1.0
+ * Version:           1.2.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            pravinregi
@@ -71,8 +71,68 @@ function spg_use_classic_editor( $use, $post_type ) {
 	return ( 'spg_project' === $post_type ) ? false : $use;
 }
 
+add_action( 'init', 'spg_register_taxonomy' );
+function spg_register_taxonomy() {
+
+	register_taxonomy(
+		'spg_project_type',
+		'spg_project',
+		array(
+			'labels'            => array(
+				'name'          => __( 'Project Type', 'simple-portfolio-grid' ),
+				'singular_name' => __( 'Project Type', 'simple-portfolio-grid' ),
+			),
+			'hierarchical'      => true,
+			'public'            => false,
+			'show_ui'           => true,
+			'show_admin_column' => true,
+			'show_in_rest'      => true,
+			'rewrite'           => false,
+		)
+	);
+}
+
+// Makes sure the Commercial / Residential terms exist, and puts any project
+// created before this taxonomy existed into Commercial so it doesn't just
+// vanish from the grid. Runs once per site (fresh install or update alike).
+function spg_seed_project_types() {
+
+	foreach ( array( 'Commercial', 'Residential' ) as $name ) {
+		if ( ! term_exists( $name, 'spg_project_type' ) ) {
+			wp_insert_term( $name, 'spg_project_type' );
+		}
+	}
+
+	$untagged = get_posts( array(
+		'post_type'      => 'spg_project',
+		'posts_per_page' => -1,
+		'fields'         => 'ids',
+		'tax_query'      => array(
+			array(
+				'taxonomy' => 'spg_project_type',
+				'operator' => 'NOT EXISTS',
+			),
+		),
+	) );
+
+	foreach ( $untagged as $post_id ) {
+		wp_set_post_terms( $post_id, array( 'Commercial' ), 'spg_project_type' );
+	}
+}
+
+add_action( 'init', function () {
+	if ( get_option( 'spg_terms_seeded' ) ) {
+		return;
+	}
+	spg_seed_project_types();
+	update_option( 'spg_terms_seeded', 1 );
+}, 20 );
+
 register_activation_hook( __FILE__, function () {
 	spg_register_post_type();
+	spg_register_taxonomy();
+	spg_seed_project_types();
+	update_option( 'spg_terms_seeded', 1 );
 	flush_rewrite_rules();
 } );
 
@@ -199,33 +259,74 @@ add_shortcode( 'portfolio', function ( $atts ) {
 
 	$atts = shortcode_atts( array( 'columns' => 3 ), $atts, 'portfolio' );
 
-	$q = new WP_Query( array(
-		'post_type'      => 'spg_project',
-		'posts_per_page' => -1,
-		'orderby'        => 'menu_order date',
-		'order'          => 'ASC',
-	) );
+	$tabs = array(
+		'commercial'  => __( 'Commercial', 'simple-portfolio-grid' ),
+		'residential' => __( 'Residential', 'simple-portfolio-grid' ),
+	);
 
-	if ( ! $q->have_posts() ) {
-		return '';
+	$panels = array();
+
+	foreach ( $tabs as $slug => $label ) {
+
+		$q = new WP_Query( array(
+			'post_type'      => 'spg_project',
+			'posts_per_page' => -1,
+			'orderby'        => 'menu_order date',
+			'order'          => 'ASC',
+			'tax_query'      => array(
+				array(
+					'taxonomy' => 'spg_project_type',
+					'field'    => 'slug',
+					'terms'    => $slug,
+				),
+			),
+		) );
+
+		ob_start();
+
+		if ( $q->have_posts() ) {
+			echo '<div class="spg-grid" style="--spg-cols:' . (int) $atts['columns'] . ';">';
+
+			while ( $q->have_posts() ) {
+				$q->the_post();
+				echo '<a class="spg-card" href="' . esc_url( get_permalink() ) . '">';
+				if ( has_post_thumbnail() ) {
+					the_post_thumbnail( 'large' );
+				}
+				echo '<span class="spg-card-overlay"></span>';
+				echo '<span class="spg-card-title">' . esc_html( get_the_title() ) . '</span>';
+				echo '</a>';
+			}
+
+			echo '</div>';
+		} else {
+			echo '<p class="spg-empty">' . esc_html__( 'No projects in this category yet.', 'simple-portfolio-grid' ) . '</p>';
+		}
+
+		wp_reset_postdata();
+		$panels[ $slug ] = ob_get_clean();
 	}
 
 	ob_start();
-	echo '<div class="spg-grid" style="--spg-cols:' . (int) $atts['columns'] . ';">';
+	echo '<div class="spg-tabs">';
 
-	while ( $q->have_posts() ) {
-		$q->the_post();
-		echo '<a class="spg-card" href="' . esc_url( get_permalink() ) . '">';
-		if ( has_post_thumbnail() ) {
-			the_post_thumbnail( 'large' );
-		}
-		echo '<span class="spg-card-overlay"></span>';
-		echo '<span class="spg-card-title">' . esc_html( get_the_title() ) . '</span>';
-		echo '</a>';
+	echo '<div class="spg-tab-nav" role="tablist">';
+	$i = 0;
+	foreach ( $tabs as $slug => $label ) {
+		$active = ( 0 === $i );
+		echo '<button type="button" class="spg-tab-btn' . ( $active ? ' is-active' : '' ) . '" data-spg-tab="' . esc_attr( $slug ) . '" role="tab" aria-selected="' . ( $active ? 'true' : 'false' ) . '">' . esc_html( $label ) . '</button>';
+		$i++;
+	}
+	echo '</div>';
+
+	$i = 0;
+	foreach ( $panels as $slug => $html ) {
+		$active = ( 0 === $i );
+		echo '<div class="spg-tab-panel' . ( $active ? ' is-active' : '' ) . '" data-spg-panel="' . esc_attr( $slug ) . '"' . ( $active ? '' : ' hidden' ) . '>' . $html . '</div>';
+		$i++;
 	}
 
 	echo '</div>';
-	wp_reset_postdata();
 
 	return ob_get_clean();
 } );
@@ -249,29 +350,24 @@ add_action( 'wp_enqueue_scripts', function () {
 	wp_enqueue_style( 'spg-style' );
 	wp_add_inline_style( 'spg-style', spg_css() );
 
-	if ( is_singular( 'spg_project' ) ) {
-		wp_register_script( 'spg-parallax', false, array(), false, true );
-		wp_enqueue_script( 'spg-parallax' );
-		wp_add_inline_script( 'spg-parallax', spg_parallax_js() );
-	}
+	wp_register_script( 'spg-frontend', false, array(), false, true );
+	wp_enqueue_script( 'spg-frontend' );
+	wp_add_inline_script( 'spg-frontend', spg_frontend_js() );
 } );
 
-function spg_parallax_js() {
+function spg_frontend_js() {
 	return <<<'JS'
 (function () {
-	if ( window.matchMedia && window.matchMedia( '(prefers-reduced-motion: reduce)' ).matches ) {
-		return;
-	}
-
-	var imgs = document.querySelectorAll( '.spg-image-wrap img' );
-	if ( ! imgs.length ) {
-		return;
-	}
-
-	var maxShift = 30;
-	var ticking  = false;
+	var reduceMotion = window.matchMedia && window.matchMedia( '(prefers-reduced-motion: reduce)' ).matches;
+	var imgs         = document.querySelectorAll( '.spg-image-wrap img, .spg-card img' );
+	var maxShift     = 30;
+	var ticking      = false;
 
 	function update() {
+		if ( reduceMotion ) {
+			return;
+		}
+
 		var wh = window.innerHeight;
 
 		imgs.forEach( function ( img ) {
@@ -279,7 +375,7 @@ function spg_parallax_js() {
 			var center   = rect.top + rect.height / 2;
 			var progress = ( center - wh / 2 ) / ( wh / 2 + rect.height / 2 );
 			progress     = Math.max( -1, Math.min( 1, progress ) );
-			img.style.transform = 'translateY(' + ( progress * maxShift ).toFixed( 2 ) + 'px)';
+			img.style.translate = '0 ' + ( progress * maxShift ).toFixed( 2 ) + 'px';
 		} );
 
 		ticking = false;
@@ -292,9 +388,36 @@ function spg_parallax_js() {
 		}
 	}
 
-	window.addEventListener( 'scroll', onScroll, { passive: true } );
-	window.addEventListener( 'resize', onScroll );
-	update();
+	if ( imgs.length && ! reduceMotion ) {
+		window.addEventListener( 'scroll', onScroll, { passive: true } );
+		window.addEventListener( 'resize', onScroll );
+		update();
+	}
+
+	document.querySelectorAll( '.spg-tabs' ).forEach( function ( tabs ) {
+		var buttons = tabs.querySelectorAll( '.spg-tab-btn' );
+		var panels  = tabs.querySelectorAll( '.spg-tab-panel' );
+
+		buttons.forEach( function ( btn ) {
+			btn.addEventListener( 'click', function () {
+				var target = btn.getAttribute( 'data-spg-tab' );
+
+				buttons.forEach( function ( b ) {
+					var active = ( b === btn );
+					b.classList.toggle( 'is-active', active );
+					b.setAttribute( 'aria-selected', active ? 'true' : 'false' );
+				} );
+
+				panels.forEach( function ( p ) {
+					var match = ( p.getAttribute( 'data-spg-panel' ) === target );
+					p.classList.toggle( 'is-active', match );
+					p.hidden = ! match;
+				} );
+
+				update();
+			} );
+		} );
+	} );
 })();
 JS;
 }
@@ -304,13 +427,23 @@ function spg_css() {
 /* grid */
 .spg-grid{display:grid;grid-template-columns:repeat(var(--spg-cols,3),1fr);gap:24px}
 .spg-card{position:relative;display:block;aspect-ratio:16/7;overflow:hidden;text-decoration:none}
-.spg-card img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s ease}
-.spg-card:hover img{transform:scale(1.06)}
+.spg-card img{position:absolute;top:-18%;left:0;width:100%;height:136%;object-fit:cover;display:block;transition:scale .6s ease;will-change:transform}
+.spg-card:hover img{scale:1.06}
 .spg-card-overlay{position:absolute;inset:0;background:rgba(0,0,0,.3);transition:background .4s ease}
 .spg-card:hover .spg-card-overlay{background:rgba(0,0,0,.45)}
 .spg-card-title{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
 text-align:center;padding:0 18px;color:#fff;font-size:17px;font-weight:600;letter-spacing:.14em;
 text-transform:uppercase;line-height:1.35}
+
+/* Commercial / Residential tabs */
+.spg-tab-nav{display:flex;gap:8px;margin-bottom:28px;border-bottom:1px solid rgba(0,0,0,.12)}
+.spg-tab-btn{appearance:none;background:none;border:none;cursor:pointer;padding:12px 22px;
+font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:inherit;opacity:.5;
+border-bottom:2px solid transparent;margin-bottom:-1px;transition:opacity .3s ease,border-color .3s ease}
+.spg-tab-btn:hover{opacity:.8}
+.spg-tab-btn.is-active{opacity:1;border-color:currentColor}
+.spg-tab-panel[hidden]{display:none}
+.spg-empty{opacity:.55;padding:30px 0}
 
 /* single project: images left, text right */
 .spg-single{display:grid;grid-template-columns:1.45fr 1fr;gap:60px;
