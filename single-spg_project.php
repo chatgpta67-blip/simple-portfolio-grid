@@ -22,10 +22,10 @@ while ( have_posts() ) :
 			<?php
 			if ( $ids ) {
 				foreach ( $ids as $id ) {
-					echo wp_get_attachment_image( $id, 'large', false, array( 'loading' => 'lazy' ) );
+					echo '<div class="spg-image-wrap">' . wp_get_attachment_image( $id, 'large', false, array( 'loading' => 'lazy' ) ) . '</div>';
 				}
 			} elseif ( has_post_thumbnail() ) {
-				the_post_thumbnail( 'large' );
+				echo '<div class="spg-image-wrap">' . get_the_post_thumbnail( get_the_ID(), 'large' ) . '</div>';
 			}
 			?>
 		</div>

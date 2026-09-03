@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Simple Portfolio Grid
  * Description:       Add projects with a title, a thumbnail, content and images. Shows a responsive grid via the [portfolio] shortcode, and a two-column page for each project (images left, text right).
- * Version:           1.0.0
+ * Version:           1.1.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            pravinregi
@@ -248,7 +248,56 @@ add_action( 'wp_enqueue_scripts', function () {
 	wp_register_style( 'spg-style', false );
 	wp_enqueue_style( 'spg-style' );
 	wp_add_inline_style( 'spg-style', spg_css() );
+
+	if ( is_singular( 'spg_project' ) ) {
+		wp_register_script( 'spg-parallax', false, array(), false, true );
+		wp_enqueue_script( 'spg-parallax' );
+		wp_add_inline_script( 'spg-parallax', spg_parallax_js() );
+	}
 } );
+
+function spg_parallax_js() {
+	return <<<'JS'
+(function () {
+	if ( window.matchMedia && window.matchMedia( '(prefers-reduced-motion: reduce)' ).matches ) {
+		return;
+	}
+
+	var imgs = document.querySelectorAll( '.spg-image-wrap img' );
+	if ( ! imgs.length ) {
+		return;
+	}
+
+	var maxShift = 30;
+	var ticking  = false;
+
+	function update() {
+		var wh = window.innerHeight;
+
+		imgs.forEach( function ( img ) {
+			var rect     = img.parentElement.getBoundingClientRect();
+			var center   = rect.top + rect.height / 2;
+			var progress = ( center - wh / 2 ) / ( wh / 2 + rect.height / 2 );
+			progress     = Math.max( -1, Math.min( 1, progress ) );
+			img.style.transform = 'translateY(' + ( progress * maxShift ).toFixed( 2 ) + 'px)';
+		} );
+
+		ticking = false;
+	}
+
+	function onScroll() {
+		if ( ! ticking ) {
+			window.requestAnimationFrame( update );
+			ticking = true;
+		}
+	}
+
+	window.addEventListener( 'scroll', onScroll, { passive: true } );
+	window.addEventListener( 'resize', onScroll );
+	update();
+})();
+JS;
+}
 
 function spg_css() {
 	return '
@@ -266,10 +315,11 @@ text-transform:uppercase;line-height:1.35}
 /* single project: images left, text right */
 .spg-single{display:grid;grid-template-columns:1.45fr 1fr;gap:60px;
 max-width:1500px;margin:0 auto;padding:60px 30px}
-.spg-images{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.spg-images img{width:100%;height:100%;aspect-ratio:4/3;object-fit:cover;display:block}
+.spg-images{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.spg-image-wrap{position:relative;overflow:hidden;aspect-ratio:4/3}
+.spg-image-wrap img{position:absolute;top:-18%;left:0;width:100%;height:136%;object-fit:cover;display:block;will-change:transform}
 /* a lone final image spans the full width instead of leaving a gap */
-.spg-images img:last-child:nth-child(odd){grid-column:1/-1;aspect-ratio:16/9}
+.spg-image-wrap:last-child:nth-child(3n+1){grid-column:1/-1;aspect-ratio:21/9}
 .spg-text{position:sticky;top:100px;align-self:start}
 .spg-text h1{font-size:clamp(30px,3.4vw,44px);font-weight:300;letter-spacing:.02em;margin:0 0 24px}
 .spg-text .spg-body{font-size:17px;line-height:1.85}
@@ -283,6 +333,6 @@ text-transform:uppercase;text-decoration:none;opacity:.7}
 .spg-text{position:static}}
 @media(max-width:640px){.spg-grid{grid-template-columns:1fr}.spg-card-title{font-size:15px}}
 @media(max-width:560px){.spg-images{grid-template-columns:1fr}
-.spg-images img:last-child:nth-child(odd){aspect-ratio:4/3}}
+.spg-image-wrap:last-child:nth-child(3n+1){aspect-ratio:4/3}}
 ';
 }
