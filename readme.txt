@@ -4,7 +4,7 @@ Tags: portfolio, gallery, projects, grid, showcase
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.2.0
+Stable tag: 1.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -57,6 +57,9 @@ It links to a page with the slug `featuredworks` if one exists, otherwise it fal
 3. The image picker in the Projects editor.
 
 == Changelog ==
+
+= 1.3.0 =
+* Parallax now moves each image's container, not the image itself, with neighboring images alternating direction as you scroll — a more pronounced, checkerboard-style effect.
 
 = 1.2.0 =
 * The `[portfolio]` grid is now split into Commercial and Residential tabs (new "Project Type" field on each project).

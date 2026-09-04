@@ -21,11 +21,16 @@ while ( have_posts() ) :
 		<div class="spg-images">
 			<?php
 			if ( $ids ) {
-				foreach ( $ids as $id ) {
-					echo '<div class="spg-image-wrap">' . wp_get_attachment_image( $id, 'large', false, array( 'loading' => 'lazy' ) ) . '</div>';
+				foreach ( array_values( $ids ) as $i => $id ) {
+					$dir = ( 0 === $i % 2 ) ? 1 : -1;
+					echo '<div class="spg-image-wrap"><div class="spg-parallax-layer" data-spg-dir="' . esc_attr( $dir ) . '">'
+						. wp_get_attachment_image( $id, 'large', false, array( 'loading' => 'lazy' ) )
+						. '</div></div>';
 				}
 			} elseif ( has_post_thumbnail() ) {
-				echo '<div class="spg-image-wrap">' . get_the_post_thumbnail( get_the_ID(), 'large' ) . '</div>';
+				echo '<div class="spg-image-wrap"><div class="spg-parallax-layer" data-spg-dir="1">'
+					. get_the_post_thumbnail( get_the_ID(), 'large' )
+					. '</div></div>';
 			}
 			?>
 		</div>

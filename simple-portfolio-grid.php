@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Simple Portfolio Grid
  * Description:       Add projects with a title, a thumbnail, content and images. Shows a responsive grid via the [portfolio] shortcode, and a two-column page for each project (images left, text right).
- * Version:           1.2.0
+ * Version:           1.3.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            pravinregi
@@ -287,15 +287,18 @@ add_shortcode( 'portfolio', function ( $atts ) {
 		if ( $q->have_posts() ) {
 			echo '<div class="spg-grid" style="--spg-cols:' . (int) $atts['columns'] . ';">';
 
+			$i = 0;
 			while ( $q->have_posts() ) {
 				$q->the_post();
+				$dir = ( 0 === $i % 2 ) ? 1 : -1;
 				echo '<a class="spg-card" href="' . esc_url( get_permalink() ) . '">';
 				if ( has_post_thumbnail() ) {
-					the_post_thumbnail( 'large' );
+					echo '<span class="spg-parallax-layer" data-spg-dir="' . esc_attr( $dir ) . '">' . get_the_post_thumbnail( get_the_ID(), 'large' ) . '</span>';
 				}
 				echo '<span class="spg-card-overlay"></span>';
 				echo '<span class="spg-card-title">' . esc_html( get_the_title() ) . '</span>';
 				echo '</a>';
+				$i++;
 			}
 
 			echo '</div>';
@@ -359,8 +362,7 @@ function spg_frontend_js() {
 	return <<<'JS'
 (function () {
 	var reduceMotion = window.matchMedia && window.matchMedia( '(prefers-reduced-motion: reduce)' ).matches;
-	var imgs         = document.querySelectorAll( '.spg-image-wrap img, .spg-card img' );
-	var maxShift     = 30;
+	var layers       = document.querySelectorAll( '.spg-parallax-layer' );
 	var ticking      = false;
 
 	function update() {
@@ -370,12 +372,14 @@ function spg_frontend_js() {
 
 		var wh = window.innerHeight;
 
-		imgs.forEach( function ( img ) {
-			var rect     = img.parentElement.getBoundingClientRect();
+		layers.forEach( function ( layer ) {
+			var rect     = layer.parentElement.getBoundingClientRect();
 			var center   = rect.top + rect.height / 2;
 			var progress = ( center - wh / 2 ) / ( wh / 2 + rect.height / 2 );
 			progress     = Math.max( -1, Math.min( 1, progress ) );
-			img.style.translate = '0 ' + ( progress * maxShift ).toFixed( 2 ) + 'px';
+			var dir      = parseFloat( layer.getAttribute( 'data-spg-dir' ) ) || 1;
+			var amount   = Math.min( rect.height * 0.2, 80 );
+			layer.style.translate = '0 ' + ( progress * amount * dir ).toFixed( 2 ) + 'px';
 		} );
 
 		ticking = false;
@@ -388,7 +392,7 @@ function spg_frontend_js() {
 		}
 	}
 
-	if ( imgs.length && ! reduceMotion ) {
+	if ( layers.length && ! reduceMotion ) {
 		window.addEventListener( 'scroll', onScroll, { passive: true } );
 		window.addEventListener( 'resize', onScroll );
 		update();
@@ -427,8 +431,10 @@ function spg_css() {
 /* grid */
 .spg-grid{display:grid;grid-template-columns:repeat(var(--spg-cols,3),1fr);gap:24px}
 .spg-card{position:relative;display:block;aspect-ratio:16/7;overflow:hidden;text-decoration:none}
-.spg-card img{position:absolute;top:-18%;left:0;width:100%;height:136%;object-fit:cover;display:block;transition:scale .6s ease;will-change:transform}
-.spg-card:hover img{scale:1.06}
+.spg-parallax-layer{position:absolute;top:-25%;left:0;width:100%;height:150%;overflow:hidden;will-change:transform}
+.spg-parallax-layer img{width:100%;height:100%;object-fit:cover;display:block}
+.spg-card .spg-parallax-layer img{transition:scale .6s ease}
+.spg-card:hover .spg-parallax-layer img{scale:1.06}
 .spg-card-overlay{position:absolute;inset:0;background:rgba(0,0,0,.3);transition:background .4s ease}
 .spg-card:hover .spg-card-overlay{background:rgba(0,0,0,.45)}
 .spg-card-title{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
@@ -450,7 +456,6 @@ border-bottom:2px solid transparent;margin-bottom:-1px;transition:opacity .3s ea
 max-width:1500px;margin:0 auto;padding:60px 30px}
 .spg-images{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
 .spg-image-wrap{position:relative;overflow:hidden;aspect-ratio:4/3}
-.spg-image-wrap img{position:absolute;top:-18%;left:0;width:100%;height:136%;object-fit:cover;display:block;will-change:transform}
 /* a lone final image spans the full width instead of leaving a gap */
 .spg-image-wrap:last-child:nth-child(3n+1){grid-column:1/-1;aspect-ratio:21/9}
 .spg-text{position:sticky;top:100px;align-self:start}
