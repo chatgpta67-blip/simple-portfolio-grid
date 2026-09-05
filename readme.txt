@@ -4,7 +4,7 @@ Tags: portfolio, gallery, projects, grid, showcase
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.7.0
+Stable tag: 1.7.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -57,6 +57,10 @@ It links to a page with the slug `featuredworks` if one exists, otherwise it fal
 3. The image picker in the Projects editor.
 
 == Changelog ==
+
+= 1.7.1 =
+* A category with no projects in it no longer gets a tab, so the grid never opens on an empty "No projects in this category yet" panel.
+* A project saved without a Project Type is filed under Commercial instead of disappearing from both tabs.
 
 = 1.7.0 =
 * Fixed project links landing on the home page: permalink rules are now refreshed after every update, not only when the plugin is activated by hand.

@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Simple Portfolio Grid
  * Description:       Add projects with a title, a thumbnail, content and images. Shows a responsive grid via the [portfolio] shortcode, and an editorial page for each project (banner, gallery left, story right).
- * Version:           1.7.0
+ * Version:           1.7.1
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            pravinregi
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SPG_VERSION', '1.7.0' );
+define( 'SPG_VERSION', '1.7.1' );
 
 /* ------------------------------------------------------------------
  * Self-hosted updates via GitHub. To ship a new version: bump the
@@ -237,6 +237,12 @@ add_action( 'save_post_spg_project', function ( $post_id ) {
 	if ( isset( $_POST['spg_callout'] ) ) {
 		update_post_meta( $post_id, 'spg_callout', sanitize_textarea_field( wp_unslash( $_POST['spg_callout'] ) ) );
 	}
+
+	// Both tabs filter on the taxonomy, so a project saved without a type would
+	// quietly show up in neither. Default it rather than let it disappear.
+	if ( ! wp_get_post_terms( $post_id, 'spg_project_type', array( 'fields' => 'ids' ) ) ) {
+		wp_set_post_terms( $post_id, array( 'Commercial' ), 'spg_project_type' );
+	}
 } );
 
 add_action( 'admin_enqueue_scripts', function () {
@@ -334,32 +340,38 @@ add_shortcode( 'portfolio', function ( $atts ) {
 			),
 		) );
 
-		ob_start();
-
-		if ( $q->have_posts() ) {
-			echo '<div class="spg-grid" style="--spg-cols:' . (int) $atts['columns'] . ';">';
-
-			$i = 0;
-			while ( $q->have_posts() ) {
-				$q->the_post();
-				$dir = ( 0 === $i % 2 ) ? 1 : -1;
-				echo '<a class="spg-card" href="' . esc_url( get_permalink() ) . '">';
-				if ( has_post_thumbnail() ) {
-					echo '<span class="spg-parallax-layer" data-spg-dir="' . esc_attr( $dir ) . '">' . get_the_post_thumbnail( get_the_ID(), 'large' ) . '</span>';
-				}
-				echo '<span class="spg-card-overlay"></span>';
-				echo '<span class="spg-card-title">' . esc_html( get_the_title() ) . '</span>';
-				echo '</a>';
-				$i++;
-			}
-
-			echo '</div>';
-		} else {
-			echo '<p class="spg-empty">' . esc_html__( 'No projects in this category yet.', 'simple-portfolio-grid' ) . '</p>';
+		// A category with nothing in it gets no tab at all, so the grid never opens
+		// on an empty panel.
+		if ( ! $q->have_posts() ) {
+			wp_reset_postdata();
+			continue;
 		}
+
+		ob_start();
+		echo '<div class="spg-grid" style="--spg-cols:' . (int) $atts['columns'] . ';">';
+
+		$i = 0;
+		while ( $q->have_posts() ) {
+			$q->the_post();
+			$dir = ( 0 === $i % 2 ) ? 1 : -1;
+			echo '<a class="spg-card" href="' . esc_url( get_permalink() ) . '">';
+			if ( has_post_thumbnail() ) {
+				echo '<span class="spg-parallax-layer" data-spg-dir="' . esc_attr( $dir ) . '">' . get_the_post_thumbnail( get_the_ID(), 'large' ) . '</span>';
+			}
+			echo '<span class="spg-card-overlay"></span>';
+			echo '<span class="spg-card-title">' . esc_html( get_the_title() ) . '</span>';
+			echo '</a>';
+			$i++;
+		}
+
+		echo '</div>';
 
 		wp_reset_postdata();
 		$panels[ $slug ] = ob_get_clean();
+	}
+
+	if ( ! $panels ) {
+		return '';
 	}
 
 	// Radio + label rather than buttons: switching is done entirely in CSS, so the
@@ -371,7 +383,7 @@ add_shortcode( 'portfolio', function ( $atts ) {
 	echo '<div class="spg-tabs">';
 
 	$i = 0;
-	foreach ( $tabs as $slug => $label ) {
+	foreach ( $panels as $slug => $html ) {
 		printf(
 			'<input type="radio" class="spg-tab-input" name="%1$s" id="%1$s-%2$s" data-spg-tab="%2$s"%3$s />',
 			esc_attr( $uid ),
@@ -382,12 +394,12 @@ add_shortcode( 'portfolio', function ( $atts ) {
 	}
 
 	echo '<div class="spg-tab-nav">';
-	foreach ( $tabs as $slug => $label ) {
+	foreach ( $panels as $slug => $html ) {
 		printf(
 			'<label class="spg-tab-btn" for="%1$s-%2$s">%3$s</label>',
 			esc_attr( $uid ),
 			esc_attr( $slug ),
-			esc_html( $label )
+			esc_html( $tabs[ $slug ] )
 		);
 	}
 	echo '</div>';
@@ -792,7 +804,6 @@ border-bottom:2px solid transparent;margin-bottom:-1px;transition:opacity .3s ea
 .spg-tab-input[data-spg-tab="commercial"]:checked ~ .spg-tab-nav label[for$="-commercial"],
 .spg-tab-input[data-spg-tab="residential"]:checked ~ .spg-tab-nav label[for$="-residential"]{opacity:1;border-color:currentColor}
 .spg-tab-input:focus-visible ~ .spg-tab-nav{outline:2px solid var(--spg-accent);outline-offset:4px}
-.spg-empty{opacity:.55;padding:30px 0}
 
 /* single project: banner */
 .spg-banner{background:var(--spg-cream);padding:48px 30px 40px}
