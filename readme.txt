@@ -4,7 +4,7 @@ Tags: portfolio, gallery, projects, grid, showcase
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.7.1
+Stable tag: 1.7.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -57,6 +57,11 @@ It links to a page with the slug `featuredworks` if one exists, otherwise it fal
 3. The image picker in the Projects editor.
 
 == Changelog ==
+
+= 1.7.2 =
+* Fixed the project page layout in themes that wrap content in a flex or grid row, which was laying the banner and the gallery out as side-by-side columns.
+* The banner now clears a fixed site header, and a long image caption no longer runs underneath the gallery arrows.
+* Image captions no longer fall back to the raw upload filename.
 
 = 1.7.1 =
 * A category with no projects in it no longer gets a tab, so the grid never opens on an empty "No projects in this category yet" panel.

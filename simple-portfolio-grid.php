@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Simple Portfolio Grid
  * Description:       Add projects with a title, a thumbnail, content and images. Shows a responsive grid via the [portfolio] shortcode, and an editorial page for each project (banner, gallery left, story right).
- * Version:           1.7.1
+ * Version:           1.7.2
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            pravinregi
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SPG_VERSION', '1.7.1' );
+define( 'SPG_VERSION', '1.7.2' );
 
 /* ------------------------------------------------------------------
  * Self-hosted updates via GitHub. To ship a new version: bump the
@@ -806,7 +806,11 @@ border-bottom:2px solid transparent;margin-bottom:-1px;transition:opacity .3s ea
 .spg-tab-input:focus-visible ~ .spg-tab-nav{outline:2px solid var(--spg-accent);outline-offset:4px}
 
 /* single project: banner */
-.spg-banner{background:var(--spg-cream);padding:48px 30px 40px}
+/* Themes often wrap page content in a flex or grid row, which would otherwise lay
+   the banner and the gallery out as side-by-side columns. This keeps the whole
+   project page as one full-width item whatever the parent is doing. */
+.spg-project{display:block;width:100%;max-width:100%;flex:1 1 100%;grid-column:1/-1}
+.spg-banner{background:var(--spg-cream);padding:var(--spg-banner-top,120px) 30px 40px}
 .spg-banner-in{max-width:1500px;margin:0 auto;display:flex;align-items:flex-end;gap:40px;flex-wrap:wrap}
 .spg-banner-head{flex:1 1 460px}
 .spg-eyebrow{display:flex;align-items:center;gap:12px;margin:0 0 14px;font-size:11px;
@@ -835,9 +839,11 @@ max-width:1500px;margin:0 auto;padding:36px 30px 70px}
 .spg-stage:after{content:"";position:absolute;left:0;right:0;bottom:0;height:40%;pointer-events:none;
 background:linear-gradient(to top,rgba(0,0,0,.55),rgba(0,0,0,0))}
 .spg-stage-open{position:absolute;inset:0;padding:0;border:0;background:none;cursor:zoom-in}
-.spg-stage-info{position:absolute;left:20px;bottom:16px;z-index:2;pointer-events:none;color:#fff}
+.spg-stage-info{position:absolute;left:20px;bottom:16px;z-index:2;pointer-events:none;color:#fff;
+max-width:calc(100% - 120px)}
 .spg-stage-count{display:block;font-size:12px;letter-spacing:.14em;opacity:.85}
-.spg-stage-caption{display:block;margin-top:3px;font-size:13px}
+.spg-stage-caption{display:block;margin-top:3px;font-size:13px;
+overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .spg-stage-nav{position:absolute;right:18px;bottom:16px;z-index:2;display:flex;gap:8px}
 .spg-stage-nav button{display:flex;align-items:center;justify-content:center;width:30px;height:30px;
 border:1px solid rgba(255,255,255,.75);border-radius:50%;background:rgba(0,0,0,.25);color:#fff;

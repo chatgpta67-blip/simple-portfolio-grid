@@ -33,12 +33,15 @@ while ( have_posts() ) :
 		// multi-megabyte original. WordPress serves the full file when it is smaller.
 		$full    = wp_get_attachment_image_url( $id, '2048x2048' );
 		$caption = wp_get_attachment_caption( $id );
+		$alt     = trim( (string) get_post_meta( $id, '_wp_attachment_image_alt', true ) );
 
 		$images[] = array(
-			'src'     => $src,
-			'full'    => $full ? $full : $src,
-			'alt'     => trim( (string) get_post_meta( $id, '_wp_attachment_image_alt', true ) ),
-			'caption' => $caption ? $caption : get_the_title( $id ),
+			'src'  => $src,
+			'full' => $full ? $full : $src,
+			'alt'  => $alt,
+			// Deliberately no fall back to the attachment title: that is the raw
+			// upload filename, which reads as junk over the image.
+			'caption' => $caption ? $caption : $alt,
 		);
 	}
 
@@ -50,6 +53,8 @@ while ( have_posts() ) :
 	$stack  = array_slice( $images, 1, 2, true );
 	$thumbs = array_slice( $images, 3, 12, true );
 	?>
+
+	<div class="spg-project">
 
 	<section class="spg-banner">
 		<div class="spg-banner-in">
@@ -165,6 +170,8 @@ while ( have_posts() ) :
 			</div>
 
 		</div>
+
+	</div>
 
 	</div>
 
