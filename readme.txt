@@ -4,7 +4,7 @@ Tags: portfolio, gallery, projects, grid, showcase
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.5.0
+Stable tag: 1.5.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -57,6 +57,9 @@ It links to a page with the slug `featuredworks` if one exists, otherwise it fal
 3. The image picker in the Projects editor.
 
 == Changelog ==
+
+= 1.5.1 =
+* Fixed the slow image change in the popup: it now serves a 2048px version instead of the untouched original, preloads the next and previous images, and shows the already-loaded image immediately while the larger one downloads.
 
 = 1.5.0 =
 * Redesigned the project page: banner with subtitle and pull quote, a hero image with counter/caption/arrows, a thumbnail grid, and a story column with a highlighted callout.

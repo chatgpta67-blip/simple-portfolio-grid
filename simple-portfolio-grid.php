@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Simple Portfolio Grid
  * Description:       Add projects with a title, a thumbnail, content and images. Shows a responsive grid via the [portfolio] shortcode, and an editorial page for each project (banner, gallery left, story right).
- * Version:           1.5.0
+ * Version:           1.5.1
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            pravinregi
@@ -513,6 +513,7 @@ function spg_frontend_js() {
 		'<button type="button" class="spg-lb-btn spg-lb-close" aria-label="Close">&times;</button>' +
 		'<button type="button" class="spg-lb-btn spg-lb-prev" aria-label="Previous image">&#8249;</button>' +
 		'<img class="spg-lb-img" src="" alt="">' +
+		'<span class="spg-lb-spin" aria-hidden="true"></span>' +
 		'<button type="button" class="spg-lb-btn spg-lb-next" aria-label="Next image">&#8250;</button>' +
 		'<p class="spg-lb-count"></p>';
 
@@ -526,6 +527,8 @@ function spg_frontend_js() {
 	var index     = 0;
 	var lastFocus = null;
 	var hideTimer = 0;
+	var shown     = 0;
+	var cache     = {};
 
 	if ( images.length < 2 ) {
 		prevBtn.hidden = true;
@@ -533,14 +536,47 @@ function spg_frontend_js() {
 		counter.hidden = true;
 	}
 
+	function preload( i ) {
+		var n = ( i + images.length ) % images.length;
+
+		if ( ! cache[ n ] ) {
+			cache[ n ]     = new Image();
+			cache[ n ].src = images[ n ].full;
+		}
+
+		return cache[ n ];
+	}
+
 	function show( i ) {
 		index = ( i + images.length ) % images.length;
 
 		var image = images[ index ];
+		var token = ++shown;
 
-		picture.src         = image.full;
 		picture.alt         = image.alt || image.caption || '';
 		counter.textContent = pad( index + 1 ) + ' / ' + pad( images.length ) + ( image.caption ? '  ' + image.caption : '' );
+
+		var big = preload( index );
+
+		if ( big.complete ) {
+			picture.src = image.full;
+			box.classList.remove( 'is-loading' );
+		} else {
+			// The page already downloaded this image at grid size, so show that
+			// straight away and swap in the large one when it arrives.
+			picture.src = image.src;
+			box.classList.add( 'is-loading' );
+
+			big.addEventListener( 'load', function () {
+				if ( token === shown ) {
+					picture.src = image.full;
+					box.classList.remove( 'is-loading' );
+				}
+			} );
+		}
+
+		preload( index + 1 );
+		preload( index - 1 );
 	}
 
 	function open( i ) {
@@ -748,6 +784,11 @@ line-height:1;padding:10px;opacity:.7;transition:opacity .2s ease}
 .spg-lb-next{right:14px}
 .spg-lb-count{position:absolute;bottom:18px;left:0;right:0;margin:0;text-align:center;
 color:#fff;opacity:.6;font-size:12px;letter-spacing:.12em}
+.spg-lb-spin{position:absolute;width:34px;height:34px;border:2px solid rgba(255,255,255,.25);
+border-top-color:#fff;border-radius:50%;opacity:0;pointer-events:none;
+transition:opacity .2s ease;animation:spg-spin .8s linear infinite}
+.spg-lightbox.is-loading .spg-lb-spin{opacity:1}
+@keyframes spg-spin{to{transform:rotate(360deg)}}
 
 @media(max-width:1024px){.spg-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:1100px){.spg-single{grid-template-columns:1fr;gap:36px}

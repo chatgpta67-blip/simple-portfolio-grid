@@ -29,7 +29,9 @@ while ( have_posts() ) :
 			continue;
 		}
 
-		$full    = wp_get_attachment_image_url( $id, 'full' );
+		// 2048px keeps the popup sharp without making every arrow click pull down a
+		// multi-megabyte original. WordPress serves the full file when it is smaller.
+		$full    = wp_get_attachment_image_url( $id, '2048x2048' );
 		$caption = wp_get_attachment_caption( $id );
 
 		$images[] = array(
