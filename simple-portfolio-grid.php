@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Simple Portfolio Grid
  * Description:       Add projects with a title, a thumbnail, content and images. Shows a responsive grid via the [portfolio] shortcode, and an editorial page for each project (banner, gallery left, story right).
- * Version:           1.5.1
+ * Version:           1.6.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            pravinregi
@@ -401,42 +401,103 @@ function spg_frontend_js() {
 	return <<<'JS'
 (function () {
 	var reduceMotion = window.matchMedia && window.matchMedia( '(prefers-reduced-motion: reduce)' ).matches;
-	var layers       = document.querySelectorAll( '.spg-parallax-layer' );
-	var ticking      = false;
+	var layers       = Array.prototype.slice.call( document.querySelectorAll( '.spg-parallax-layer' ) );
+	var isTouch      = window.matchMedia && window.matchMedia( '(hover: none)' ).matches;
 
-	function update() {
-		if ( reduceMotion ) {
+	if ( ! layers.length || reduceMotion ) {
+		return;
+	}
+
+	var visible    = [];
+	var vw         = window.innerWidth;
+	var vh         = window.innerHeight;
+	var lastScroll = -1;
+	var running    = false;
+	var rafId      = 0;
+
+	// Driven by a frame loop rather than scroll events: iOS throttles scroll
+	// events during momentum scrolling, which makes the movement stutter and
+	// trail behind the page.
+	function render() {
+		var scrollY = window.pageYOffset;
+
+		if ( scrollY !== lastScroll ) {
+			lastScroll = scrollY;
+
+			for ( var i = 0; i < visible.length; i++ ) {
+				var layer    = visible[ i ];
+				var rect     = layer.parentElement.getBoundingClientRect();
+				var progress = ( rect.top + rect.height / 2 - vh / 2 ) / ( vh / 2 + rect.height / 2 );
+				var dir      = parseFloat( layer.getAttribute( 'data-spg-dir' ) ) || 1;
+				var amount   = Math.min( rect.height * 0.2, 80 ) * ( vw < 768 ? 0.6 : 1 );
+
+				progress = Math.max( -1, Math.min( 1, progress ) );
+				layer.style.transform = 'translate3d(0,' + ( progress * amount * dir ).toFixed( 2 ) + 'px,0)';
+			}
+		}
+
+		rafId = running ? window.requestAnimationFrame( render ) : 0;
+	}
+
+	function start() {
+		if ( ! running ) {
+			running = true;
+			rafId   = window.requestAnimationFrame( render );
+		}
+	}
+
+	function stop() {
+		running = false;
+
+		if ( rafId ) {
+			window.cancelAnimationFrame( rafId );
+			rafId = 0;
+		}
+	}
+
+	function onResize() {
+		// iOS fires resize every time the address bar slides away mid-scroll.
+		// Taking the new height there makes every image jump, so on a touch
+		// device only react once the width actually changes.
+		if ( isTouch && window.innerWidth === vw ) {
 			return;
 		}
 
-		var wh = window.innerHeight;
+		vw         = window.innerWidth;
+		vh         = window.innerHeight;
+		lastScroll = -1;
+	}
 
-		layers.forEach( function ( layer ) {
-			var rect     = layer.parentElement.getBoundingClientRect();
-			var center   = rect.top + rect.height / 2;
-			var progress = ( center - wh / 2 ) / ( wh / 2 + rect.height / 2 );
-			progress     = Math.max( -1, Math.min( 1, progress ) );
-			var dir      = parseFloat( layer.getAttribute( 'data-spg-dir' ) ) || 1;
-			var amount   = Math.min( rect.height * 0.2, 80 );
-			layer.style.translate = '0 ' + ( progress * amount * dir ).toFixed( 2 ) + 'px';
+	// Only the images on screen are measured and moved each frame, and only
+	// those carry will-change: iOS Safari drops or flickers images when too
+	// many large composited layers are alive at once.
+	var io = new IntersectionObserver( function ( entries ) {
+		entries.forEach( function ( entry ) {
+			entry.target.classList.toggle( 'is-visible', entry.isIntersecting );
 		} );
 
-		ticking = false;
-	}
+		visible = layers.filter( function ( layer ) {
+			return layer.classList.contains( 'is-visible' );
+		} );
 
-	function onScroll() {
-		if ( ! ticking ) {
-			window.requestAnimationFrame( update );
-			ticking = true;
+		lastScroll = -1;
+
+		if ( visible.length ) {
+			start();
+		} else {
+			stop();
 		}
-	}
+	}, { rootMargin: '15% 0px' } );
 
-	if ( layers.length && ! reduceMotion ) {
-		window.addEventListener( 'scroll', onScroll, { passive: true } );
-		window.addEventListener( 'resize', onScroll );
-		update();
-	}
+	layers.forEach( function ( layer ) {
+		io.observe( layer );
+	} );
 
+	window.addEventListener( 'resize', onResize, { passive: true } );
+	window.addEventListener( 'orientationchange', onResize, { passive: true } );
+})();
+
+(function () {
 	document.querySelectorAll( '.spg-tabs' ).forEach( function ( tabs ) {
 		var buttons = tabs.querySelectorAll( '.spg-tab-btn' );
 		var panels  = tabs.querySelectorAll( '.spg-tab-panel' );
@@ -456,8 +517,6 @@ function spg_frontend_js() {
 					p.classList.toggle( 'is-active', match );
 					p.hidden = ! match;
 				} );
-
-				update();
 			} );
 		} );
 	} );
@@ -528,6 +587,7 @@ function spg_frontend_js() {
 	var lastFocus = null;
 	var hideTimer = 0;
 	var shown     = 0;
+	var locked    = 0;
 	var cache     = {};
 
 	if ( images.length < 2 ) {
@@ -579,12 +639,30 @@ function spg_frontend_js() {
 		preload( index - 1 );
 	}
 
+	// overflow:hidden on the body does not hold on iOS Safari — the page keeps
+	// scrolling behind the popup — so the body is pinned at its current offset.
+	function lockScroll() {
+		locked = window.pageYOffset;
+		document.body.style.position = 'fixed';
+		document.body.style.top      = '-' + locked + 'px';
+		document.body.style.left     = '0';
+		document.body.style.right    = '0';
+	}
+
+	function unlockScroll() {
+		document.body.style.position = '';
+		document.body.style.top      = '';
+		document.body.style.left     = '';
+		document.body.style.right    = '';
+		window.scrollTo( 0, locked );
+	}
+
 	function open( i ) {
 		window.clearTimeout( hideTimer );
 		lastFocus = document.activeElement;
 		show( i );
 		box.hidden = false;
-		document.body.style.overflow = 'hidden';
+		lockScroll();
 		window.requestAnimationFrame( function () {
 			box.classList.add( 'is-open' );
 		} );
@@ -593,7 +671,7 @@ function spg_frontend_js() {
 
 	function close() {
 		box.classList.remove( 'is-open' );
-		document.body.style.overflow = '';
+		unlockScroll();
 		hideTimer = window.setTimeout( function () {
 			box.hidden = true;
 		}, 250 );
@@ -682,12 +760,18 @@ function spg_css() {
 /* grid */
 .spg-grid{display:grid;grid-template-columns:repeat(var(--spg-cols,3),1fr);gap:24px}
 .spg-card{position:relative;display:block;aspect-ratio:16/7;overflow:hidden;text-decoration:none}
-.spg-parallax-layer{position:absolute;top:-25%;left:0;width:100%;height:150%;overflow:hidden;will-change:transform}
+.spg-parallax-layer{position:absolute;top:-25%;left:0;width:100%;height:150%;overflow:hidden;
+transform:translate3d(0,0,0);backface-visibility:hidden}
+.spg-parallax-layer.is-visible{will-change:transform}
 .spg-parallax-layer img{width:100%;height:100%;object-fit:cover;display:block}
-.spg-card .spg-parallax-layer img{transition:scale .6s ease}
-.spg-card:hover .spg-parallax-layer img{scale:1.06}
 .spg-card-overlay{position:absolute;inset:0;background:rgba(0,0,0,.3);transition:background .4s ease}
-.spg-card:hover .spg-card-overlay{background:rgba(0,0,0,.45)}
+/* hover only where there is a real pointer, otherwise a tap sticks these on until
+   the next tap somewhere else */
+@media(hover:hover){.spg-card .spg-parallax-layer img{transition:scale .6s ease}
+.spg-card:hover .spg-parallax-layer img{scale:1.06}
+.spg-card:hover .spg-card-overlay{background:rgba(0,0,0,.45)}}
+.spg-card,.spg-shot,.spg-tab-btn,.spg-gallery-btn,.spg-lb-btn,.spg-stage-open,.spg-stage-nav button{
+touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .spg-card-title{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
 text-align:center;padding:0 18px;color:#fff;font-size:17px;font-weight:600;letter-spacing:.14em;
 text-transform:uppercase;line-height:1.35}

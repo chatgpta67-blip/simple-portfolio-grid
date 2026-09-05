@@ -4,7 +4,7 @@ Tags: portfolio, gallery, projects, grid, showcase
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.5.1
+Stable tag: 1.6.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -57,6 +57,10 @@ It links to a page with the slug `featuredworks` if one exists, otherwise it fal
 3. The image picker in the Projects editor.
 
 == Changelog ==
+
+= 1.6.0 =
+* Smoothed the parallax on iPhone and iPad: it now runs off a frame loop instead of scroll events, only moves the images actually on screen, composites on the GPU, and no longer jumps when the Safari address bar slides away.
+* The popup no longer lets the page scroll behind it on iOS, taps no longer leave a card stuck in its hover state, and buttons respond without the tap delay.
 
 = 1.5.1 =
 * Fixed the slow image change in the popup: it now serves a 2048px version instead of the untouched original, preloads the next and previous images, and shows the already-loaded image immediately while the larger one downloads.
