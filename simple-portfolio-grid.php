@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Simple Portfolio Grid
  * Description:       Add projects with a title, a thumbnail, content and images. Shows a responsive grid via the [portfolio] shortcode, and an editorial page for each project (banner, gallery left, story right).
- * Version:           1.9.0
+ * Version:           1.9.1
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            pravinregi
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SPG_VERSION', '1.9.0' );
+define( 'SPG_VERSION', '1.9.1' );
 
 /* ------------------------------------------------------------------
  * Self-hosted updates via GitHub. To ship a new version: bump the
@@ -435,6 +435,20 @@ add_action( 'wp_enqueue_scripts', function () {
 	wp_register_script( 'spg-frontend', false, array(), false, true );
 	wp_enqueue_script( 'spg-frontend' );
 	wp_add_inline_script( 'spg-frontend', spg_frontend_js() );
+
+	// The project page headings use the display serif the theme already names in
+	// its own CSS, but nothing on the page actually loads it. Filterable so a site
+	// using different type can drop this request.
+	if ( is_singular( 'spg_project' ) ) {
+		$font_url = apply_filters(
+			'spg_heading_font_url',
+			'https://fonts.googleapis.com/css2?family=Noto+Serif+Display:ital,wght@0,400;0,500;1,400&display=swap'
+		);
+
+		if ( $font_url ) {
+			wp_enqueue_style( 'spg-fonts', $font_url, array(), null );
+		}
+	}
 } );
 
 function spg_frontend_js() {
@@ -768,7 +782,8 @@ function spg_css() {
 :root{--spg-ink:#1d2522;--spg-muted:#8d837b;--spg-soft:#77736e;--spg-body:#555652;
 --spg-quote:#615b55;--spg-rule:#a9998d;--spg-rule-quote:#9e8d81;--spg-rule-back:#bdb4ac;
 --spg-sage:#f0f2eb;--spg-line:#e1e1d8;--spg-accent:#8f776b;--spg-accent-ink:#513a32;--spg-shade:#e8e6e0;
---spg-serif:Georgia,"Times New Roman",serif}
+--spg-serif:"Noto Serif Display",Georgia,"Times New Roman",serif;
+--spg-sans:"Montserrat",Arial,Helvetica,sans-serif}
 
 /* grid */
 .spg-grid{display:grid;grid-template-columns:repeat(var(--spg-cols,3),1fr);gap:24px}
@@ -808,14 +823,14 @@ border-bottom:2px solid transparent;margin-bottom:-1px;transition:opacity .3s ea
    colour, button padding) are forced: this drops into an unknown theme whose
    stylesheet loads after ours and would otherwise win. */
 .spg-project{display:block;width:100%;max-width:100%;flex:1 1 100%;grid-column:1/-1;
-color:var(--spg-ink);font-family:Arial,Helvetica,sans-serif}
+color:var(--spg-ink);font-family:var(--spg-sans)}
 .spg-project *{box-sizing:border-box}
 .spg-project button{margin:0;min-width:0!important;box-shadow:none!important;text-shadow:none;
 font-family:inherit;text-transform:none;letter-spacing:normal;line-height:1}
 .spg-page{max-width:1440px;margin:0 auto;padding:var(--spg-top,118px) 54px 90px}
 
 .spg-project .spg-eyebrow{display:flex!important;align-items:center;gap:16px;margin:0 0 22px!important;
-color:var(--spg-muted)!important;font-family:Arial,Helvetica,sans-serif!important;
+color:var(--spg-muted)!important;font-family:var(--spg-sans)!important;
 font-size:11px!important;font-weight:400!important;line-height:1.4!important;
 letter-spacing:4px!important;text-transform:uppercase!important}
 .spg-project .spg-eyebrow:before{content:"";flex:0 0 38px;width:38px;height:1px;background:var(--spg-rule)}
@@ -827,7 +842,7 @@ font-family:var(--spg-serif)!important;font-weight:400!important;
 font-size:clamp(46px,5.4vw,78px)!important;line-height:.98!important;letter-spacing:-2.5px!important;
 text-transform:none!important;color:var(--spg-ink)!important}
 .spg-project .spg-subtitle{margin:22px 0 0!important;color:var(--spg-soft)!important;
-font-family:Arial,Helvetica,sans-serif!important;font-size:20px!important;font-weight:400!important;
+font-family:var(--spg-sans)!important;font-size:20px!important;font-weight:400!important;
 line-height:1.5!important;letter-spacing:normal!important}
 .spg-project .spg-quote{flex:0 0 180px;width:180px;margin:0!important;padding:0 0 8px!important;
 color:var(--spg-quote)!important;font-family:var(--spg-serif)!important;font-style:italic!important;
@@ -851,7 +866,7 @@ background:linear-gradient(180deg,transparent 65%,rgba(0,0,0,.28))}
 padding:0!important;border:0!important;background:none!important;cursor:zoom-in}
 .spg-project .spg-stage-meta{position:absolute;z-index:3;left:18px;bottom:16px;display:flex;gap:12px;
 margin:0!important;max-width:calc(100% - 120px);color:#fff!important;
-font-family:Arial,Helvetica,sans-serif!important;font-size:12px!important;line-height:1.4!important;
+font-family:var(--spg-sans)!important;font-size:12px!important;line-height:1.4!important;
 letter-spacing:.5px!important;pointer-events:none}
 .spg-stage-caption{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .spg-stage-nav{position:absolute;z-index:4;right:16px;bottom:13px;display:flex;gap:7px}
@@ -877,15 +892,15 @@ cursor:pointer;transition:transform .2s ease,opacity .2s ease}
 font-family:var(--spg-serif)!important;font-weight:400!important;
 font-size:clamp(40px,4vw,62px)!important;line-height:1.03!important;letter-spacing:-1.8px!important;
 text-transform:none!important;color:var(--spg-ink)!important}
-.spg-project .spg-body{color:var(--spg-body)!important;font-family:Arial,Helvetica,sans-serif!important;
+.spg-project .spg-body{color:var(--spg-body)!important;font-family:var(--spg-sans)!important;
 font-size:17px!important;line-height:1.75!important;letter-spacing:normal!important}
 /* Text pasted from a word processor arrives as <div>s, not <p>s, so this targets
    every direct child rather than paragraphs alone. */
 .spg-project .spg-body > *{margin:0 0 20px!important;color:var(--spg-body)!important;
-font-family:Arial,Helvetica,sans-serif!important;font-size:17px!important;
+font-family:var(--spg-sans)!important;font-size:17px!important;
 line-height:1.75!important;letter-spacing:normal!important}
 .spg-project .spg-body > *:last-child{margin-bottom:0!important}
-.spg-project .spg-body strong,.spg-project .spg-body b{color:var(--spg-ink)!important;font-weight:700}
+.spg-project .spg-body strong,.spg-project .spg-body b{color:var(--spg-ink)!important;font-weight:600}
 .spg-project .spg-body h1,.spg-project .spg-body h2,.spg-project .spg-body h3{
 margin:0 0 20px!important;font-family:var(--spg-serif)!important;font-weight:400!important;
 line-height:1.1!important;letter-spacing:-1px!important;color:var(--spg-ink)!important}
@@ -906,7 +921,7 @@ background:#e8eee3;transform:rotate(45deg)}
 
 .spg-project .spg-back{display:inline-flex;align-items:center;gap:10px;
 margin-top:54px!important;padding:18px 0 0!important;border-top:1px solid var(--spg-rule-back)!important;
-color:var(--spg-soft)!important;font-family:Arial,Helvetica,sans-serif!important;
+color:var(--spg-soft)!important;font-family:var(--spg-sans)!important;
 font-size:13px!important;line-height:1.4!important;letter-spacing:1.5px!important;
 text-transform:uppercase!important;text-decoration:none!important;background:none!important}
 .spg-project .spg-back span{font-size:20px;line-height:1}

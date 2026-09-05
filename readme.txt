@@ -4,7 +4,7 @@ Tags: portfolio, gallery, projects, grid, showcase
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.9.0
+Stable tag: 1.9.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -57,6 +57,9 @@ It links to a page with the slug `featuredworks` if one exists, otherwise it fal
 3. The image picker in the Projects editor.
 
 == Changelog ==
+
+= 1.9.1 =
+* The project page now uses the site typefaces rather than Georgia and Arial: headings in the display serif the theme already names, body text in the sans the theme loads. Both are set through CSS variables so they can be changed in one line.
 
 = 1.9.0 =
 * Every project image is now shown in the thumbnail grid, and the "View Full Gallery" button has been removed. Clicking the main image still opens the full-size popup.
