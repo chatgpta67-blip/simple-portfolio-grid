@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       Simple Portfolio Grid
- * Description:       Add projects with a title, a thumbnail, content and images. Shows a responsive grid via the [portfolio] shortcode, and a two-column page for each project (images left, text right).
- * Version:           1.4.0
+ * Description:       Add projects with a title, a thumbnail, content and images. Shows a responsive grid via the [portfolio] shortcode, and an editorial page for each project (banner, gallery left, story right).
+ * Version:           1.5.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            pravinregi
@@ -144,7 +144,36 @@ register_deactivation_hook( __FILE__, 'flush_rewrite_rules' );
 
 add_action( 'add_meta_boxes', function () {
 	add_meta_box( 'spg_images', __( 'Project Images', 'simple-portfolio-grid' ), 'spg_render_images_metabox', 'spg_project', 'normal', 'high' );
+	add_meta_box( 'spg_details', __( 'Project Details', 'simple-portfolio-grid' ), 'spg_render_details_metabox', 'spg_project', 'normal', 'high' );
 } );
+
+function spg_render_details_metabox( $post ) {
+
+	$lines = array(
+		'spg_subtitle' => array( __( 'Subtitle', 'simple-portfolio-grid' ), __( 'Sits under the project title in the banner.', 'simple-portfolio-grid' ) ),
+		'spg_quote'    => array( __( 'Pull quote', 'simple-portfolio-grid' ), __( 'Short italic line on the right of the banner.', 'simple-portfolio-grid' ) ),
+		'spg_heading'  => array( __( 'About heading', 'simple-portfolio-grid' ), __( 'Heading above the description, e.g. "A Home Nestled in Nature".', 'simple-portfolio-grid' ) ),
+	);
+
+	foreach ( $lines as $key => $line ) {
+		printf(
+			'<p><label for="%1$s"><strong>%2$s</strong></label><br />
+			<input type="text" class="widefat" id="%1$s" name="%1$s" value="%3$s" />
+			<span class="description">%4$s</span></p>',
+			esc_attr( $key ),
+			esc_html( $line[0] ),
+			esc_attr( get_post_meta( $post->ID, $key, true ) ),
+			esc_html( $line[1] )
+		);
+	}
+	?>
+	<p>
+		<label for="spg_callout"><strong><?php esc_html_e( 'Callout', 'simple-portfolio-grid' ); ?></strong></label><br />
+		<textarea class="widefat" rows="2" id="spg_callout" name="spg_callout"><?php echo esc_textarea( get_post_meta( $post->ID, 'spg_callout', true ) ); ?></textarea>
+		<span class="description"><?php esc_html_e( 'Highlighted box at the end of the description.', 'simple-portfolio-grid' ); ?></span>
+	</p>
+	<?php
+}
 
 function spg_render_images_metabox( $post ) {
 	wp_nonce_field( 'spg_save', 'spg_nonce' );
@@ -184,6 +213,16 @@ add_action( 'save_post_spg_project', function ( $post_id ) {
 	}
 	if ( isset( $_POST['spg_images'] ) ) {
 		update_post_meta( $post_id, 'spg_images', sanitize_text_field( wp_unslash( $_POST['spg_images'] ) ) );
+	}
+
+	foreach ( array( 'spg_subtitle', 'spg_quote', 'spg_heading' ) as $field ) {
+		if ( isset( $_POST[ $field ] ) ) {
+			update_post_meta( $post_id, $field, sanitize_text_field( wp_unslash( $_POST[ $field ] ) ) );
+		}
+	}
+
+	if ( isset( $_POST['spg_callout'] ) ) {
+		update_post_meta( $post_id, 'spg_callout', sanitize_textarea_field( wp_unslash( $_POST['spg_callout'] ) ) );
 	}
 } );
 
@@ -425,10 +464,42 @@ function spg_frontend_js() {
 })();
 
 (function () {
-	var wraps = Array.prototype.slice.call( document.querySelectorAll( '.spg-images .spg-image-wrap[data-spg-full]' ) );
+	var gallery = document.querySelector( '.spg-gallery[data-spg-images]' );
 
-	if ( ! wraps.length ) {
+	if ( ! gallery ) {
 		return;
+	}
+
+	var images = JSON.parse( gallery.getAttribute( 'data-spg-images' ) );
+
+	if ( ! images || ! images.length ) {
+		return;
+	}
+
+	var stageImg     = gallery.querySelector( '.spg-stage-img' );
+	var stageCount   = gallery.querySelector( '.spg-stage-count' );
+	var stageCaption = gallery.querySelector( '.spg-stage-caption' );
+	var shots        = Array.prototype.slice.call( gallery.querySelectorAll( '[data-spg-index]' ) );
+	var current      = 0;
+
+	function pad( n ) {
+		return ( n < 10 ? '0' : '' ) + n;
+	}
+
+	function setStage( i ) {
+		current = ( i + images.length ) % images.length;
+
+		var image = images[ current ];
+
+		stageImg.src = image.src;
+		stageImg.alt = image.alt || image.caption || '';
+
+		stageCount.textContent   = pad( current + 1 ) + ' / ' + pad( images.length );
+		stageCaption.textContent = image.caption || '';
+
+		shots.forEach( function ( shot ) {
+			shot.classList.toggle( 'is-current', parseInt( shot.getAttribute( 'data-spg-index' ), 10 ) === current );
+		} );
 	}
 
 	var box = document.createElement( 'div' );
@@ -456,20 +527,20 @@ function spg_frontend_js() {
 	var lastFocus = null;
 	var hideTimer = 0;
 
-	if ( wraps.length < 2 ) {
+	if ( images.length < 2 ) {
 		prevBtn.hidden = true;
 		nextBtn.hidden = true;
 		counter.hidden = true;
 	}
 
 	function show( i ) {
-		index = ( i + wraps.length ) % wraps.length;
+		index = ( i + images.length ) % images.length;
 
-		var thumb = wraps[ index ].querySelector( 'img' );
+		var image = images[ index ];
 
-		picture.src         = wraps[ index ].getAttribute( 'data-spg-full' );
-		picture.alt         = thumb ? thumb.alt : '';
-		counter.textContent = ( index + 1 ) + ' / ' + wraps.length;
+		picture.src         = image.full;
+		picture.alt         = image.alt || image.caption || '';
+		counter.textContent = pad( index + 1 ) + ' / ' + pad( images.length ) + ( image.caption ? '  ' + image.caption : '' );
 	}
 
 	function open( i ) {
@@ -496,18 +567,29 @@ function spg_frontend_js() {
 		}
 	}
 
-	wraps.forEach( function ( wrap, i ) {
-		wrap.addEventListener( 'click', function () {
-			open( i );
-		} );
-
-		wrap.addEventListener( 'keydown', function ( e ) {
-			if ( 'Enter' === e.key || ' ' === e.key ) {
-				e.preventDefault();
-				open( i );
-			}
+	shots.forEach( function ( shot ) {
+		shot.addEventListener( 'click', function () {
+			setStage( parseInt( shot.getAttribute( 'data-spg-index' ), 10 ) );
 		} );
 	} );
+
+	gallery.querySelector( '.spg-stage-prev' ).addEventListener( 'click', function () {
+		setStage( current - 1 );
+	} );
+
+	gallery.querySelector( '.spg-stage-next' ).addEventListener( 'click', function () {
+		setStage( current + 1 );
+	} );
+
+	gallery.querySelector( '.spg-stage-open' ).addEventListener( 'click', function () {
+		open( current );
+	} );
+
+	gallery.querySelector( '.spg-gallery-btn' ).addEventListener( 'click', function () {
+		open( current );
+	} );
+
+	setStage( 0 );
 
 	closeBtn.addEventListener( 'click', close );
 
@@ -558,6 +640,9 @@ JS;
 
 function spg_css() {
 	return '
+:root{--spg-cream:#f6f3ee;--spg-ink:#21201d;--spg-muted:#6d6862;--spg-accent:#b07d5c;--spg-sage:#e9ede6;
+--spg-serif:"Cormorant Garamond","Playfair Display",Georgia,"Times New Roman",serif}
+
 /* grid */
 .spg-grid{display:grid;grid-template-columns:repeat(var(--spg-cols,3),1fr);gap:24px}
 .spg-card{position:relative;display:block;aspect-ratio:16/7;overflow:hidden;text-decoration:none}
@@ -581,23 +666,73 @@ border-bottom:2px solid transparent;margin-bottom:-1px;transition:opacity .3s ea
 .spg-tab-panel[hidden]{display:none}
 .spg-empty{opacity:.55;padding:30px 0}
 
-/* single project: images left, text right */
-.spg-single{display:grid;grid-template-columns:1.45fr 1fr;gap:60px;
-max-width:1500px;margin:0 auto;padding:60px 30px}
-.spg-images{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
-.spg-image-wrap{position:relative;overflow:hidden;aspect-ratio:4/3}
-/* a lone final image spans the full width instead of leaving a gap */
-.spg-image-wrap:last-child:nth-child(3n+1){grid-column:1/-1;aspect-ratio:21/9}
-.spg-text{position:sticky;top:100px;align-self:start}
-.spg-text h1{font-size:clamp(30px,3.4vw,44px);font-weight:300;letter-spacing:.02em;margin:0 0 24px}
-.spg-text .spg-body{font-size:17px;line-height:1.85}
-.spg-text .spg-body h2{font-size:26px;font-weight:400;margin:0 0 16px}
-.spg-back{display:inline-block;margin-top:36px;font-size:13px;letter-spacing:.1em;
-text-transform:uppercase;text-decoration:none;opacity:.7}
-.spg-back:hover{opacity:1}
+/* single project: banner */
+.spg-banner{background:var(--spg-cream);padding:48px 30px 40px}
+.spg-banner-in{max-width:1500px;margin:0 auto;display:flex;align-items:flex-end;gap:40px;flex-wrap:wrap}
+.spg-banner-head{flex:1 1 460px}
+.spg-eyebrow{display:flex;align-items:center;gap:12px;margin:0 0 14px;font-size:11px;
+letter-spacing:.28em;text-transform:uppercase;color:var(--spg-muted)}
+.spg-eyebrow:before{content:"";width:34px;height:1px;background:var(--spg-accent)}
+.spg-banner-title{font-family:var(--spg-serif);font-size:clamp(32px,4.4vw,54px);font-weight:400;
+line-height:1.08;margin:0;color:var(--spg-ink)}
+.spg-banner-sub{margin:14px 0 0;font-size:15px;color:var(--spg-muted)}
+.spg-scroll{display:flex;align-items:center;gap:12px;padding-bottom:6px;text-decoration:none;
+font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--spg-muted)}
+.spg-scroll-ring{display:flex;align-items:center;justify-content:center;width:38px;height:38px;
+border:1px solid var(--spg-accent);border-radius:50%;color:var(--spg-accent);font-size:15px;
+transition:background .25s ease,color .25s ease}
+.spg-scroll:hover .spg-scroll-ring{background:var(--spg-accent);color:#fff}
+.spg-banner-quote{max-width:170px;margin:0;padding-bottom:6px;font-family:var(--spg-serif);
+font-style:italic;font-size:17px;line-height:1.45;text-align:right;color:var(--spg-ink)}
+.spg-banner-quote:after{content:"";display:block;width:44px;height:1px;margin:14px 0 0 auto;
+background:var(--spg-accent)}
+
+/* single project: gallery left, story right */
+.spg-single{display:grid;grid-template-columns:1.8fr 1fr;gap:44px;
+max-width:1500px;margin:0 auto;padding:36px 30px 70px}
+.spg-feature{display:grid;grid-template-columns:2.1fr 1fr;gap:8px}
+.spg-stage{position:relative;overflow:hidden;aspect-ratio:4/3;background:#eceae6}
+.spg-stage-img{width:100%;height:100%;object-fit:cover;display:block}
+.spg-stage:after{content:"";position:absolute;left:0;right:0;bottom:0;height:40%;pointer-events:none;
+background:linear-gradient(to top,rgba(0,0,0,.55),rgba(0,0,0,0))}
+.spg-stage-open{position:absolute;inset:0;padding:0;border:0;background:none;cursor:zoom-in}
+.spg-stage-info{position:absolute;left:20px;bottom:16px;z-index:2;pointer-events:none;color:#fff}
+.spg-stage-count{display:block;font-size:12px;letter-spacing:.14em;opacity:.85}
+.spg-stage-caption{display:block;margin-top:3px;font-size:13px}
+.spg-stage-nav{position:absolute;right:18px;bottom:16px;z-index:2;display:flex;gap:8px}
+.spg-stage-nav button{display:flex;align-items:center;justify-content:center;width:30px;height:30px;
+border:1px solid rgba(255,255,255,.75);border-radius:50%;background:rgba(0,0,0,.25);color:#fff;
+font-size:15px;line-height:1;cursor:pointer;transition:background .25s ease}
+.spg-stage-nav button:hover{background:rgba(0,0,0,.6)}
+.spg-stack{display:grid;grid-template-rows:1fr 1fr;gap:8px}
+.spg-shot{position:relative;display:block;width:100%;padding:0;border:0;overflow:hidden;
+background:#eceae6;cursor:pointer}
+.spg-stack .spg-shot{height:100%}
+.spg-thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+.spg-thumbs .spg-shot{aspect-ratio:3/2}
+.spg-shot.is-current{outline:2px solid var(--spg-accent);outline-offset:-2px}
+.spg-gallery-btn{display:inline-flex;align-items:center;gap:12px;margin-top:18px;padding:11px 22px;
+border:1px solid rgba(0,0,0,.22);border-radius:999px;background:none;cursor:pointer;
+font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--spg-ink);
+transition:border-color .25s ease,color .25s ease}
+.spg-gallery-btn:hover{border-color:var(--spg-accent);color:var(--spg-accent)}
+
+/* single project: story column */
+.spg-text{position:sticky;top:40px;align-self:start}
+.spg-heading{font-family:var(--spg-serif);font-size:clamp(26px,2.6vw,38px);font-weight:400;
+line-height:1.16;margin:0 0 20px;color:var(--spg-ink)}
+.spg-body{font-size:14.5px;line-height:1.85;color:var(--spg-muted)}
+.spg-body p{margin:0 0 16px}
+.spg-body strong{color:var(--spg-ink);font-weight:600}
+.spg-callout{display:flex;gap:14px;margin-top:26px;padding:20px 22px;background:var(--spg-sage)}
+.spg-callout svg{flex:none;margin-top:3px}
+.spg-callout p{margin:0;font-family:var(--spg-serif);font-size:15px;line-height:1.55;color:var(--spg-ink)}
+.spg-back-wrap{position:relative;margin-top:34px;padding-top:26px}
+.spg-back-wrap:before{content:"";position:absolute;top:0;left:0;width:46px;height:1px;background:var(--spg-accent)}
+.spg-back{display:inline-flex;align-items:center;gap:12px;font-size:14px;text-decoration:none;color:var(--spg-ink)}
+.spg-back:hover{color:var(--spg-accent)}
 
 /* full-image popup */
-.spg-image-wrap[data-spg-full]{cursor:zoom-in}
 .spg-lightbox{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;
 padding:48px;background:rgba(0,0,0,.92);opacity:0;transition:opacity .25s ease}
 .spg-lightbox.is-open{opacity:1}
@@ -615,13 +750,21 @@ line-height:1;padding:10px;opacity:.7;transition:opacity .2s ease}
 color:#fff;opacity:.6;font-size:12px;letter-spacing:.12em}
 
 @media(max-width:1024px){.spg-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:900px){.spg-single{grid-template-columns:1fr;gap:36px;padding:40px 20px}
+@media(max-width:1100px){.spg-single{grid-template-columns:1fr;gap:36px}
 .spg-text{position:static}}
-@media(max-width:640px){.spg-grid{grid-template-columns:1fr}.spg-card-title{font-size:15px}}
-@media(max-width:560px){.spg-images{grid-template-columns:1fr}
-.spg-image-wrap:last-child:nth-child(3n+1){aspect-ratio:4/3}}
-@media(max-width:640px){.spg-lightbox{padding:14px}
+@media(max-width:760px){.spg-banner{padding:32px 18px 28px}
+.spg-banner-in{gap:24px}
+.spg-banner-quote{max-width:none;text-align:left}
+.spg-banner-quote:after{margin-left:0}
+.spg-single{padding:26px 18px 50px}
+.spg-feature{grid-template-columns:1fr}
+.spg-stack{grid-template-rows:none;grid-template-columns:1fr 1fr}
+.spg-stack .spg-shot{height:auto;aspect-ratio:3/2}
+.spg-thumbs{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:640px){.spg-grid{grid-template-columns:1fr}.spg-card-title{font-size:15px}
+.spg-lightbox{padding:14px}
 .spg-lb-close{font-size:30px;top:6px;right:10px}
 .spg-lb-prev,.spg-lb-next{font-size:38px;margin-top:-22px}}
+@media(max-width:480px){.spg-thumbs{grid-template-columns:repeat(2,1fr)}}
 ';
 }

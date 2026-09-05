@@ -4,7 +4,7 @@ Tags: portfolio, gallery, projects, grid, showcase
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.4.0
+Stable tag: 1.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -57,6 +57,10 @@ It links to a page with the slug `featuredworks` if one exists, otherwise it fal
 3. The image picker in the Projects editor.
 
 == Changelog ==
+
+= 1.5.0 =
+* Redesigned the project page: banner with subtitle and pull quote, a hero image with counter/caption/arrows, a thumbnail grid, and a story column with a highlighted callout.
+* New "Project Details" box on the project editor for the subtitle, pull quote, about heading and callout. Image captions come from the media library.
 
 = 1.4.0 =
 * Clicking an image on a project page opens it full size in a popup, with arrow/swipe navigation between that project's images.
