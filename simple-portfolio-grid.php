@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Simple Portfolio Grid
  * Description:       Add projects with a title, a thumbnail, content and images. Shows a responsive grid via the [portfolio] shortcode, and an editorial page for each project (banner, gallery left, story right).
- * Version:           1.8.1
+ * Version:           1.8.2
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            pravinregi
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SPG_VERSION', '1.8.1' );
+define( 'SPG_VERSION', '1.8.2' );
 
 /* ------------------------------------------------------------------
  * Self-hosted updates via GitHub. To ship a new version: bump the
@@ -889,8 +889,12 @@ font-size:clamp(40px,4vw,62px)!important;line-height:1.03!important;letter-spaci
 text-transform:none!important;color:var(--spg-ink)!important}
 .spg-project .spg-body{color:var(--spg-body)!important;font-family:Arial,Helvetica,sans-serif!important;
 font-size:17px!important;line-height:1.75!important;letter-spacing:normal!important}
-.spg-project .spg-body p{margin:0 0 20px!important;color:var(--spg-body)!important;
-font-size:17px!important;line-height:1.75!important}
+/* Text pasted from a word processor arrives as <div>s, not <p>s, so this targets
+   every direct child rather than paragraphs alone. */
+.spg-project .spg-body > *{margin:0 0 20px!important;color:var(--spg-body)!important;
+font-family:Arial,Helvetica,sans-serif!important;font-size:17px!important;
+line-height:1.75!important;letter-spacing:normal!important}
+.spg-project .spg-body > *:last-child{margin-bottom:0!important}
 .spg-project .spg-body strong,.spg-project .spg-body b{color:var(--spg-ink)!important;font-weight:700}
 .spg-project .spg-body h1,.spg-project .spg-body h2,.spg-project .spg-body h3{
 margin:0 0 20px!important;font-family:var(--spg-serif)!important;font-weight:400!important;
@@ -973,7 +977,7 @@ transition:opacity .2s ease;animation:spg-spin .8s linear infinite}
 .spg-project .spg-title{font-size:45px!important;letter-spacing:-1px!important}
 .spg-project .spg-subtitle{font-size:17px!important;margin-top:16px!important}
 .spg-project .spg-heading{font-size:34px!important;letter-spacing:-1px!important;margin-bottom:20px!important}
-.spg-project .spg-body,.spg-project .spg-body p{font-size:16px!important}
+.spg-project .spg-body,.spg-project .spg-body > *{font-size:16px!important}
 .spg-project .spg-statement,.spg-project .spg-statement p{font-size:17px!important}
 .spg-project .spg-statement{padding:20px!important;gap:14px}
 .spg-project .spg-gallery-btn{width:100%}
