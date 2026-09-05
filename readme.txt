@@ -4,7 +4,7 @@ Tags: portfolio, gallery, projects, grid, showcase
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.7.2
+Stable tag: 1.8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -57,6 +57,10 @@ It links to a page with the slug `featuredworks` if one exists, otherwise it fal
 3. The image picker in the Projects editor.
 
 == Changelog ==
+
+= 1.8.0 =
+* Rebuilt the project page to the supplied design: larger serif headings, one warm page tone rather than a separate banner band, rounded image cards, a 2:1 hero with two stacked side images, a 4-across thumbnail grid, blurred circular arrows, and a bordered callout with a leaf mark.
+* Reworked the responsive behaviour: the hero stacks, the gallery drops to a full-width hero over paired side images, thumbnails go to two columns, and the arrow buttons grow to a comfortable tap size on phones.
 
 = 1.7.2 =
 * Fixed the project page layout in themes that wrap content in a flex or grid row, which was laying the banner and the gallery out as side-by-side columns.

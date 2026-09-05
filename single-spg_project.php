@@ -1,6 +1,6 @@
 <?php
 /**
- * Single project page: banner, gallery on the left, story on the right.
+ * Single project page: hero, gallery on the left, story on the right.
  * Copy this file into your theme folder as single-spg_project.php if you want to edit it.
  */
 
@@ -50,129 +50,110 @@ while ( have_posts() ) :
 	$heading  = get_post_meta( $post_id, 'spg_heading', true );
 	$callout  = get_post_meta( $post_id, 'spg_callout', true );
 
-	$stack  = array_slice( $images, 1, 2, true );
-	$thumbs = array_slice( $images, 3, 12, true );
+	$sides  = array_slice( $images, 1, 2, true );
+	$thumbs = array_slice( $images, 3, 8, true );
 	?>
 
 	<div class="spg-project">
+		<div class="spg-page">
 
-	<section class="spg-banner">
-		<div class="spg-banner-in">
-
-			<div class="spg-banner-head">
-				<p class="spg-eyebrow"><?php esc_html_e( 'Featured Works', 'simple-portfolio-grid' ); ?></p>
-				<h1 class="spg-banner-title"><?php the_title(); ?></h1>
-				<?php if ( $subtitle ) : ?>
-					<p class="spg-banner-sub"><?php echo esc_html( $subtitle ); ?></p>
+			<section class="spg-hero">
+				<div class="spg-hero-head">
+					<p class="spg-eyebrow"><?php esc_html_e( 'Featured Works', 'simple-portfolio-grid' ); ?></p>
+					<h1 class="spg-title"><?php the_title(); ?></h1>
+					<?php if ( $subtitle ) : ?>
+						<p class="spg-subtitle"><?php echo esc_html( $subtitle ); ?></p>
+					<?php endif; ?>
+				</div>
+				<?php if ( $quote ) : ?>
+					<p class="spg-quote"><?php echo esc_html( $quote ); ?></p>
 				<?php endif; ?>
-			</div>
+			</section>
 
-			<a class="spg-scroll" href="#spg-story">
-				<span class="spg-scroll-ring" aria-hidden="true">&darr;</span>
-				<?php esc_html_e( 'Scroll', 'simple-portfolio-grid' ); ?>
-			</a>
+			<section class="spg-content<?php echo $images ? '' : ' spg-content--solo'; ?>">
 
-			<?php if ( $quote ) : ?>
-				<p class="spg-banner-quote"><?php echo esc_html( $quote ); ?></p>
-			<?php endif; ?>
+				<?php if ( $images ) : ?>
+					<div class="spg-gallery-col">
+						<div class="spg-gallery" data-spg-images="<?php echo esc_attr( wp_json_encode( $images ) ); ?>">
 
-		</div>
-	</section>
+							<div class="spg-stage">
+								<img class="spg-stage-img" src="<?php echo esc_url( $images[0]['src'] ); ?>" alt="<?php echo esc_attr( $images[0]['alt'] ); ?>" />
+								<button type="button" class="spg-stage-open" aria-label="<?php esc_attr_e( 'View full size', 'simple-portfolio-grid' ); ?>"></button>
+								<p class="spg-stage-meta">
+									<span class="spg-stage-count"></span>
+									<span class="spg-stage-caption"></span>
+								</p>
+								<div class="spg-stage-nav">
+									<button type="button" class="spg-stage-prev" aria-label="<?php esc_attr_e( 'Previous image', 'simple-portfolio-grid' ); ?>">&#8249;</button>
+									<button type="button" class="spg-stage-next" aria-label="<?php esc_attr_e( 'Next image', 'simple-portfolio-grid' ); ?>">&#8250;</button>
+								</div>
+							</div>
 
-	<div class="spg-single" id="spg-story">
-
-		<?php if ( $images ) : ?>
-			<div class="spg-gallery" data-spg-images="<?php echo esc_attr( wp_json_encode( $images ) ); ?>">
-
-				<div class="spg-feature">
-
-					<div class="spg-stage">
-						<img class="spg-stage-img" src="<?php echo esc_url( $images[0]['src'] ); ?>" alt="<?php echo esc_attr( $images[0]['alt'] ); ?>" />
-						<button type="button" class="spg-stage-open" aria-label="<?php esc_attr_e( 'View full size', 'simple-portfolio-grid' ); ?>"></button>
-						<div class="spg-stage-info">
-							<span class="spg-stage-count"></span>
-							<span class="spg-stage-caption"></span>
-						</div>
-						<div class="spg-stage-nav">
-							<button type="button" class="spg-stage-prev" aria-label="<?php esc_attr_e( 'Previous image', 'simple-portfolio-grid' ); ?>">&#8249;</button>
-							<button type="button" class="spg-stage-next" aria-label="<?php esc_attr_e( 'Next image', 'simple-portfolio-grid' ); ?>">&#8250;</button>
-						</div>
-					</div>
-
-					<?php if ( $stack ) : ?>
-						<div class="spg-stack">
-							<?php foreach ( $stack as $i => $image ) : ?>
-								<button type="button" class="spg-shot" data-spg-index="<?php echo (int) $i; ?>">
+							<?php foreach ( $sides as $i => $image ) : ?>
+								<button type="button" class="spg-shot spg-side" data-spg-index="<?php echo (int) $i; ?>">
 									<span class="spg-parallax-layer" data-spg-dir="<?php echo ( 0 === $i % 2 ) ? 1 : -1; ?>">
 										<img src="<?php echo esc_url( $image['src'] ); ?>" alt="<?php echo esc_attr( $image['alt'] ); ?>" loading="lazy" />
 									</span>
 								</button>
 							<?php endforeach; ?>
+
+							<?php if ( $thumbs ) : ?>
+								<div class="spg-thumbs">
+									<?php foreach ( $thumbs as $i => $image ) : ?>
+										<button type="button" class="spg-shot spg-thumb" data-spg-index="<?php echo (int) $i; ?>">
+											<span class="spg-parallax-layer" data-spg-dir="<?php echo ( 0 === $i % 2 ) ? 1 : -1; ?>">
+												<img src="<?php echo esc_url( $image['src'] ); ?>" alt="<?php echo esc_attr( $image['alt'] ); ?>" loading="lazy" />
+											</span>
+										</button>
+									<?php endforeach; ?>
+								</div>
+							<?php endif; ?>
+
 						</div>
-					<?php endif; ?>
 
-				</div>
-
-				<?php if ( $thumbs ) : ?>
-					<div class="spg-thumbs">
-						<?php foreach ( $thumbs as $i => $image ) : ?>
-							<button type="button" class="spg-shot" data-spg-index="<?php echo (int) $i; ?>">
-								<span class="spg-parallax-layer" data-spg-dir="<?php echo ( 0 === $i % 2 ) ? 1 : -1; ?>">
-									<img src="<?php echo esc_url( $image['src'] ); ?>" alt="<?php echo esc_attr( $image['alt'] ); ?>" loading="lazy" />
-								</span>
-							</button>
-						<?php endforeach; ?>
+						<button type="button" class="spg-gallery-btn">
+							<?php esc_html_e( 'View Full Gallery', 'simple-portfolio-grid' ); ?>
+							<span aria-hidden="true">&rarr;</span>
+						</button>
 					</div>
 				<?php endif; ?>
 
-				<button type="button" class="spg-gallery-btn">
-					<?php esc_html_e( 'View Full Gallery', 'simple-portfolio-grid' ); ?>
-					<span aria-hidden="true">&rarr;</span>
-				</button>
+				<article class="spg-copy">
 
-			</div>
-		<?php endif; ?>
+					<p class="spg-eyebrow"><?php esc_html_e( 'About the Space', 'simple-portfolio-grid' ); ?></p>
 
-		<div class="spg-text">
+					<?php if ( $heading ) : ?>
+						<h2 class="spg-heading"><?php echo esc_html( $heading ); ?></h2>
+					<?php endif; ?>
 
-			<p class="spg-eyebrow"><?php esc_html_e( 'About the Space', 'simple-portfolio-grid' ); ?></p>
+					<div class="spg-body">
+						<?php the_content(); ?>
+					</div>
 
-			<?php if ( $heading ) : ?>
-				<h2 class="spg-heading"><?php echo esc_html( $heading ); ?></h2>
-			<?php endif; ?>
+					<?php if ( $callout ) : ?>
+						<div class="spg-statement">
+							<span class="spg-leaf" aria-hidden="true"></span>
+							<p><?php echo nl2br( esc_html( $callout ) ); ?></p>
+						</div>
+					<?php endif; ?>
 
-			<div class="spg-body">
-				<?php the_content(); ?>
-			</div>
+					<?php
+					// Falls back to the homepage on sites that don't have a "featuredworks" page,
+					// and is filterable so a site owner can point it anywhere without editing the plugin.
+					$back_page = get_page_by_path( 'featuredworks' );
+					$back_url  = $back_page ? get_permalink( $back_page ) : home_url( '/' );
+					$back_url  = apply_filters( 'spg_back_link_url', $back_url );
+					?>
+					<a class="spg-back" href="<?php echo esc_url( $back_url ); ?>">
+						<span aria-hidden="true">&larr;</span>
+						<?php esc_html_e( 'Back to Featured Works', 'simple-portfolio-grid' ); ?>
+					</a>
 
-			<?php if ( $callout ) : ?>
-				<div class="spg-callout">
-					<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
-						<path d="M4 20c0-9 6-15 16-15 0 10-6 15-16 15z" fill="#6b8b62" />
-						<path d="M4 20C7 14 11 10 17 7" stroke="#ffffff" stroke-width="1.2" fill="none" opacity=".7" />
-					</svg>
-					<p><?php echo nl2br( esc_html( $callout ) ); ?></p>
-				</div>
-			<?php endif; ?>
+				</article>
 
-			<?php
-			// Falls back to the homepage on sites that don't have a "featuredworks" page,
-			// and is filterable so a site owner can point it anywhere without editing the plugin.
-			$back_page = get_page_by_path( 'featuredworks' );
-			$back_url  = $back_page ? get_permalink( $back_page ) : home_url( '/' );
-			$back_url  = apply_filters( 'spg_back_link_url', $back_url );
-			?>
-			<div class="spg-back-wrap">
-				<a class="spg-back" href="<?php echo esc_url( $back_url ); ?>">
-					<span aria-hidden="true">&larr;</span>
-					<?php esc_html_e( 'Back to Featured Works', 'simple-portfolio-grid' ); ?>
-				</a>
-			</div>
+			</section>
 
 		</div>
-
-	</div>
-
 	</div>
 
 	<?php
