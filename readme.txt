@@ -4,7 +4,7 @@ Tags: portfolio, gallery, projects, grid, showcase
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.10.0
+Stable tag: 1.11.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -40,7 +40,7 @@ Simple Portfolio Grid adds a lightweight "Projects" post type to WordPress, so y
 
 = How do I show only one kind of project? =
 
-Pass the Project Type slug: `[portfolio type="commercial"]` or `[portfolio type="residential"]`. Several at once work too, e.g. `type="commercial,residential"`. Leave it off to show everything.
+Pass the Project Type slug: `[portfolio type="commercial"]` or `[portfolio type="residential"]`. Several at once work too, e.g. `type="commercial,residential"`. Leave it off to show everything. Add a heading with `title="RESIDENTIAL | MULTI-FAMILY"`.
 
 = How do I change the number of grid columns? =
 
@@ -61,6 +61,10 @@ It links to a page with the slug `featuredworks` if one exists, otherwise it fal
 3. The image picker in the Projects editor.
 
 == Changelog ==
+
+= 1.11.0 =
+* Restyled the project cards to the supplied design: wide short banners in a three-across grid, darkened images that brighten and lift slightly on hover, and centred uppercase titles.
+* New title attribute, e.g. `[portfolio type="residential" title="RESIDENTIAL | MULTI-FAMILY"]`, which sets the pipe apart the way the design does.
 
 = 1.10.0 =
 * Replaced the Commercial / Residential tabs with a type attribute, so `[portfolio type="commercial"]` and `[portfolio type="residential"]` can live on their own pages. Plain `[portfolio]` shows every project.

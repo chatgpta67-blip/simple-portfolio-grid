@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Simple Portfolio Grid
  * Description:       Add projects with a title, a thumbnail, content and images. Shows a responsive grid via the [portfolio] shortcode, and an editorial page for each project (banner, gallery left, story right).
- * Version:           1.10.0
+ * Version:           1.11.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            pravinregi
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SPG_VERSION', '1.10.0' );
+define( 'SPG_VERSION', '1.11.0' );
 
 /* ------------------------------------------------------------------
  * Self-hosted updates via GitHub. To ship a new version: bump the
@@ -315,7 +315,7 @@ JS;
 
 add_shortcode( 'portfolio', function ( $atts ) {
 
-	$atts = shortcode_atts( array( 'columns' => 3, 'type' => '' ), $atts, 'portfolio' );
+	$atts = shortcode_atts( array( 'columns' => 3, 'type' => '', 'title' => '' ), $atts, 'portfolio' );
 
 	$args = array(
 		'post_type'      => 'spg_project',
@@ -345,6 +345,14 @@ add_shortcode( 'portfolio', function ( $atts ) {
 	}
 
 	ob_start();
+	echo '<div class="spg-portfolio">';
+
+	if ( $atts['title'] ) {
+		// A pipe in the title is set apart, as in "RESIDENTIAL | MULTI-FAMILY".
+		$parts = array_map( 'esc_html', array_map( 'trim', explode( '|', $atts['title'] ) ) );
+		echo '<h2 class="spg-section-title">' . implode( '<span>|</span>', $parts ) . '</h2>';
+	}
+
 	echo '<div class="spg-grid" style="--spg-cols:' . (int) $atts['columns'] . ';">';
 
 	$i = 0;
@@ -361,7 +369,7 @@ add_shortcode( 'portfolio', function ( $atts ) {
 		$i++;
 	}
 
-	echo '</div>';
+	echo '</div></div>';
 	wp_reset_postdata();
 
 	return ob_get_clean();
@@ -741,22 +749,33 @@ function spg_css() {
 
 /* grid */
 .spg-grid{display:grid;grid-template-columns:repeat(var(--spg-cols,3),1fr);gap:24px}
-.spg-card{position:relative;display:block;aspect-ratio:16/7;overflow:hidden;text-decoration:none}
+.spg-portfolio{width:min(1100px,calc(100% - 48px));margin:34px auto 80px}
+.spg-portfolio .spg-section-title{margin:0 0 18px!important;padding:0!important;
+font-family:var(--spg-serif)!important;font-size:clamp(36px,4.2vw,50px)!important;
+line-height:1!important;font-weight:400!important;letter-spacing:1px!important;
+text-transform:none!important;color:#aaa!important}
+.spg-portfolio .spg-section-title span{display:inline-block;margin:0 15px;color:#999;
+font-family:var(--spg-sans)!important;font-weight:300!important}
+.spg-grid{display:grid;grid-template-columns:repeat(var(--spg-cols,3),1fr);column-gap:31px;row-gap:62px}
+.spg-card{position:relative;display:block;height:87px;overflow:hidden;text-decoration:none;background:#ddd}
 .spg-parallax-layer{position:absolute;top:-25%;left:0;width:100%;height:150%;overflow:hidden;
 transform:translate3d(0,0,0);backface-visibility:hidden}
 .spg-parallax-layer.is-visible{will-change:transform}
 .spg-parallax-layer img{width:100%;height:100%;object-fit:cover;display:block}
-.spg-card-overlay{position:absolute;inset:0;background:rgba(0,0,0,.3);transition:background .4s ease}
+.spg-card img{filter:brightness(.72);transition:transform .45s ease,filter .45s ease}
+.spg-card-overlay{position:absolute;inset:0;background:rgba(0,0,0,.16);transition:background .3s ease}
+.spg-portfolio .spg-card-title{position:absolute;z-index:2;inset:0;display:flex;
+align-items:center;justify-content:center;padding:10px!important;margin:0!important;
+color:#fff!important;text-align:center;font-family:var(--spg-sans)!important;
+font-size:16px!important;font-weight:700!important;line-height:1.35!important;
+letter-spacing:1.4px!important;text-transform:uppercase!important;
+text-shadow:0 1px 4px rgba(0,0,0,.45)}
 /* hover only where there is a real pointer, otherwise a tap sticks these on until
    the next tap somewhere else */
-@media(hover:hover){.spg-card .spg-parallax-layer img{transition:scale .6s ease}
-.spg-card:hover .spg-parallax-layer img{scale:1.06}
-.spg-card:hover .spg-card-overlay{background:rgba(0,0,0,.45)}}
+@media(hover:hover){.spg-card:hover img{transform:scale(1.045);filter:brightness(.82)}
+.spg-card:hover .spg-card-overlay{background:rgba(0,0,0,.08)}}
 .spg-card,.spg-shot,.spg-lb-btn,.spg-stage-open,.spg-stage-nav button{
 touch-action:manipulation;-webkit-tap-highlight-color:transparent}
-.spg-card-title{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-text-align:center;padding:0 18px;color:#fff;font-size:17px;font-weight:600;letter-spacing:.14em;
-text-transform:uppercase;line-height:1.35}
 
 /* single project page.
    Scoped to .spg-project, and the properties themes most often reset (type,
@@ -892,7 +911,16 @@ transition:opacity .2s ease;animation:spg-spin .8s linear infinite}
 .spg-lightbox.is-loading .spg-lb-spin{opacity:1}
 @keyframes spg-spin{to{transform:rotate(360deg)}}
 
-@media(max-width:1024px){.spg-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:800px){.spg-portfolio{width:min(700px,calc(100% - 32px));margin-top:28px}
+.spg-grid{grid-template-columns:repeat(2,1fr);column-gap:20px;row-gap:28px}
+.spg-card{height:95px}
+.spg-portfolio .spg-section-title{font-size:38px!important}}
+
+@media(max-width:520px){.spg-portfolio{width:calc(100% - 28px)}
+.spg-grid{grid-template-columns:1fr;row-gap:18px}
+.spg-card{height:105px}
+.spg-portfolio .spg-section-title{font-size:31px!important;letter-spacing:.5px!important}
+.spg-portfolio .spg-section-title span{margin:0 8px}}
 
 @media(max-width:1100px){.spg-content{grid-template-columns:1fr;gap:48px}
 .spg-copy{padding-top:0;max-width:760px}
@@ -904,8 +932,7 @@ transition:opacity .2s ease;animation:spg-spin .8s linear infinite}
 .spg-project .spg-title{letter-spacing:-1.5px!important}
 .spg-project .spg-subtitle{font-size:18px!important}}
 
-@media(max-width:640px){.spg-grid{grid-template-columns:1fr}.spg-card-title{font-size:15px}
-.spg-lightbox{padding:14px}
+@media(max-width:640px){.spg-lightbox{padding:14px}
 .spg-lb-close{font-size:30px;top:6px;right:10px}
 .spg-lb-prev,.spg-lb-next{font-size:38px;margin-top:-22px}}
 
