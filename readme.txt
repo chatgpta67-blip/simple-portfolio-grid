@@ -4,7 +4,7 @@ Tags: portfolio, gallery, projects, grid, showcase
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.6.0
+Stable tag: 1.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -57,6 +57,10 @@ It links to a page with the slug `featuredworks` if one exists, otherwise it fal
 3. The image picker in the Projects editor.
 
 == Changelog ==
+
+= 1.7.0 =
+* Fixed project links landing on the home page: permalink rules are now refreshed after every update, not only when the plugin is activated by hand.
+* The Commercial / Residential tabs now switch in CSS instead of JavaScript, so they keep working in any theme and a click can never navigate away.
 
 = 1.6.0 =
 * Smoothed the parallax on iPhone and iPad: it now runs off a frame loop instead of scroll events, only moves the images actually on screen, composites on the GPU, and no longer jumps when the Safari address bar slides away.

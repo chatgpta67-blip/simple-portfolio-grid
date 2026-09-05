@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Simple Portfolio Grid
  * Description:       Add projects with a title, a thumbnail, content and images. Shows a responsive grid via the [portfolio] shortcode, and an editorial page for each project (banner, gallery left, story right).
- * Version:           1.6.0
+ * Version:           1.7.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            pravinregi
@@ -14,6 +14,8 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+
+define( 'SPG_VERSION', '1.7.0' );
 
 /* ------------------------------------------------------------------
  * Self-hosted updates via GitHub. To ship a new version: bump the
@@ -126,6 +128,17 @@ add_action( 'init', function () {
 	}
 	spg_seed_project_types();
 	update_option( 'spg_terms_seeded', 1 );
+}, 20 );
+
+// Updates arrive through the GitHub updater, which never fires the activation
+// hook, so the permalink rules registered above would stay stale and project
+// URLs would fall through to the home page. Refresh them once per release.
+add_action( 'init', function () {
+	if ( get_option( 'spg_rewrite_version' ) === SPG_VERSION ) {
+		return;
+	}
+	flush_rewrite_rules();
+	update_option( 'spg_rewrite_version', SPG_VERSION );
 }, 20 );
 
 register_activation_hook( __FILE__, function () {
@@ -349,23 +362,38 @@ add_shortcode( 'portfolio', function ( $atts ) {
 		$panels[ $slug ] = ob_get_clean();
 	}
 
+	// Radio + label rather than buttons: switching is done entirely in CSS, so the
+	// tabs keep working if this theme never runs the script, and a click can never
+	// navigate the way a stray button in a themes form can.
+	$uid = wp_unique_id( 'spg-tabs-' );
+
 	ob_start();
 	echo '<div class="spg-tabs">';
 
-	echo '<div class="spg-tab-nav" role="tablist">';
 	$i = 0;
 	foreach ( $tabs as $slug => $label ) {
-		$active = ( 0 === $i );
-		echo '<button type="button" class="spg-tab-btn' . ( $active ? ' is-active' : '' ) . '" data-spg-tab="' . esc_attr( $slug ) . '" role="tab" aria-selected="' . ( $active ? 'true' : 'false' ) . '">' . esc_html( $label ) . '</button>';
+		printf(
+			'<input type="radio" class="spg-tab-input" name="%1$s" id="%1$s-%2$s" data-spg-tab="%2$s"%3$s />',
+			esc_attr( $uid ),
+			esc_attr( $slug ),
+			( 0 === $i ) ? ' checked="checked"' : ''
+		);
 		$i++;
+	}
+
+	echo '<div class="spg-tab-nav">';
+	foreach ( $tabs as $slug => $label ) {
+		printf(
+			'<label class="spg-tab-btn" for="%1$s-%2$s">%3$s</label>',
+			esc_attr( $uid ),
+			esc_attr( $slug ),
+			esc_html( $label )
+		);
 	}
 	echo '</div>';
 
-	$i = 0;
 	foreach ( $panels as $slug => $html ) {
-		$active = ( 0 === $i );
-		echo '<div class="spg-tab-panel' . ( $active ? ' is-active' : '' ) . '" data-spg-panel="' . esc_attr( $slug ) . '"' . ( $active ? '' : ' hidden' ) . '>' . $html . '</div>';
-		$i++;
+		echo '<div class="spg-tab-panel" data-spg-panel="' . esc_attr( $slug ) . '">' . $html . '</div>';
 	}
 
 	echo '</div>';
@@ -495,31 +523,6 @@ function spg_frontend_js() {
 
 	window.addEventListener( 'resize', onResize, { passive: true } );
 	window.addEventListener( 'orientationchange', onResize, { passive: true } );
-})();
-
-(function () {
-	document.querySelectorAll( '.spg-tabs' ).forEach( function ( tabs ) {
-		var buttons = tabs.querySelectorAll( '.spg-tab-btn' );
-		var panels  = tabs.querySelectorAll( '.spg-tab-panel' );
-
-		buttons.forEach( function ( btn ) {
-			btn.addEventListener( 'click', function () {
-				var target = btn.getAttribute( 'data-spg-tab' );
-
-				buttons.forEach( function ( b ) {
-					var active = ( b === btn );
-					b.classList.toggle( 'is-active', active );
-					b.setAttribute( 'aria-selected', active ? 'true' : 'false' );
-				} );
-
-				panels.forEach( function ( p ) {
-					var match = ( p.getAttribute( 'data-spg-panel' ) === target );
-					p.classList.toggle( 'is-active', match );
-					p.hidden = ! match;
-				} );
-			} );
-		} );
-	} );
 })();
 
 (function () {
@@ -776,14 +779,19 @@ touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 text-align:center;padding:0 18px;color:#fff;font-size:17px;font-weight:600;letter-spacing:.14em;
 text-transform:uppercase;line-height:1.35}
 
-/* Commercial / Residential tabs */
+/* Commercial / Residential tabs, switched with :checked so no script is needed */
+.spg-tab-input{position:absolute;width:1px;height:1px;opacity:0}
 .spg-tab-nav{display:flex;gap:8px;margin-bottom:28px;border-bottom:1px solid rgba(0,0,0,.12)}
-.spg-tab-btn{appearance:none;background:none;border:none;cursor:pointer;padding:12px 22px;
+.spg-tab-btn{display:inline-block;cursor:pointer;padding:12px 22px;
 font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:inherit;opacity:.5;
 border-bottom:2px solid transparent;margin-bottom:-1px;transition:opacity .3s ease,border-color .3s ease}
 .spg-tab-btn:hover{opacity:.8}
-.spg-tab-btn.is-active{opacity:1;border-color:currentColor}
-.spg-tab-panel[hidden]{display:none}
+.spg-tab-panel{display:none}
+.spg-tab-input[data-spg-tab="commercial"]:checked ~ .spg-tab-panel[data-spg-panel="commercial"],
+.spg-tab-input[data-spg-tab="residential"]:checked ~ .spg-tab-panel[data-spg-panel="residential"]{display:block}
+.spg-tab-input[data-spg-tab="commercial"]:checked ~ .spg-tab-nav label[for$="-commercial"],
+.spg-tab-input[data-spg-tab="residential"]:checked ~ .spg-tab-nav label[for$="-residential"]{opacity:1;border-color:currentColor}
+.spg-tab-input:focus-visible ~ .spg-tab-nav{outline:2px solid var(--spg-accent);outline-offset:4px}
 .spg-empty{opacity:.55;padding:30px 0}
 
 /* single project: banner */
