@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Simple Portfolio Grid
  * Description:       Add projects with a title, a thumbnail, content and images. Shows a responsive grid via the [portfolio] shortcode, and a two-column page for each project (images left, text right).
- * Version:           1.3.0
+ * Version:           1.4.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            pravinregi
@@ -423,6 +423,136 @@ function spg_frontend_js() {
 		} );
 	} );
 })();
+
+(function () {
+	var wraps = Array.prototype.slice.call( document.querySelectorAll( '.spg-images .spg-image-wrap[data-spg-full]' ) );
+
+	if ( ! wraps.length ) {
+		return;
+	}
+
+	var box = document.createElement( 'div' );
+
+	box.className = 'spg-lightbox';
+	box.setAttribute( 'role', 'dialog' );
+	box.setAttribute( 'aria-modal', 'true' );
+	box.setAttribute( 'aria-label', 'Project image' );
+	box.hidden = true;
+	box.innerHTML =
+		'<button type="button" class="spg-lb-btn spg-lb-close" aria-label="Close">&times;</button>' +
+		'<button type="button" class="spg-lb-btn spg-lb-prev" aria-label="Previous image">&#8249;</button>' +
+		'<img class="spg-lb-img" src="" alt="">' +
+		'<button type="button" class="spg-lb-btn spg-lb-next" aria-label="Next image">&#8250;</button>' +
+		'<p class="spg-lb-count"></p>';
+
+	document.body.appendChild( box );
+
+	var picture   = box.querySelector( '.spg-lb-img' );
+	var counter   = box.querySelector( '.spg-lb-count' );
+	var closeBtn  = box.querySelector( '.spg-lb-close' );
+	var prevBtn   = box.querySelector( '.spg-lb-prev' );
+	var nextBtn   = box.querySelector( '.spg-lb-next' );
+	var index     = 0;
+	var lastFocus = null;
+	var hideTimer = 0;
+
+	if ( wraps.length < 2 ) {
+		prevBtn.hidden = true;
+		nextBtn.hidden = true;
+		counter.hidden = true;
+	}
+
+	function show( i ) {
+		index = ( i + wraps.length ) % wraps.length;
+
+		var thumb = wraps[ index ].querySelector( 'img' );
+
+		picture.src         = wraps[ index ].getAttribute( 'data-spg-full' );
+		picture.alt         = thumb ? thumb.alt : '';
+		counter.textContent = ( index + 1 ) + ' / ' + wraps.length;
+	}
+
+	function open( i ) {
+		window.clearTimeout( hideTimer );
+		lastFocus = document.activeElement;
+		show( i );
+		box.hidden = false;
+		document.body.style.overflow = 'hidden';
+		window.requestAnimationFrame( function () {
+			box.classList.add( 'is-open' );
+		} );
+		closeBtn.focus();
+	}
+
+	function close() {
+		box.classList.remove( 'is-open' );
+		document.body.style.overflow = '';
+		hideTimer = window.setTimeout( function () {
+			box.hidden = true;
+		}, 250 );
+
+		if ( lastFocus ) {
+			lastFocus.focus();
+		}
+	}
+
+	wraps.forEach( function ( wrap, i ) {
+		wrap.addEventListener( 'click', function () {
+			open( i );
+		} );
+
+		wrap.addEventListener( 'keydown', function ( e ) {
+			if ( 'Enter' === e.key || ' ' === e.key ) {
+				e.preventDefault();
+				open( i );
+			}
+		} );
+	} );
+
+	closeBtn.addEventListener( 'click', close );
+
+	prevBtn.addEventListener( 'click', function () {
+		show( index - 1 );
+	} );
+
+	nextBtn.addEventListener( 'click', function () {
+		show( index + 1 );
+	} );
+
+	box.addEventListener( 'click', function ( e ) {
+		if ( e.target === box ) {
+			close();
+		}
+	} );
+
+	document.addEventListener( 'keydown', function ( e ) {
+		if ( box.hidden ) {
+			return;
+		}
+
+		if ( 'Escape' === e.key ) {
+			close();
+		} else if ( 'ArrowLeft' === e.key ) {
+			show( index - 1 );
+		} else if ( 'ArrowRight' === e.key ) {
+			show( index + 1 );
+		}
+	} );
+
+	var touchX = 0;
+
+	box.addEventListener( 'touchstart', function ( e ) {
+		touchX = e.changedTouches[ 0 ].clientX;
+	}, { passive: true } );
+
+	box.addEventListener( 'touchend', function ( e ) {
+		var delta = e.changedTouches[ 0 ].clientX - touchX;
+
+		if ( Math.abs( delta ) > 50 ) {
+			show( delta < 0 ? index + 1 : index - 1 );
+		}
+	}, { passive: true } );
+})();
 JS;
 }
 
@@ -466,11 +596,32 @@ max-width:1500px;margin:0 auto;padding:60px 30px}
 text-transform:uppercase;text-decoration:none;opacity:.7}
 .spg-back:hover{opacity:1}
 
+/* full-image popup */
+.spg-image-wrap[data-spg-full]{cursor:zoom-in}
+.spg-lightbox{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;
+padding:48px;background:rgba(0,0,0,.92);opacity:0;transition:opacity .25s ease}
+.spg-lightbox.is-open{opacity:1}
+.spg-lightbox[hidden]{display:none}
+.spg-lb-img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block}
+.spg-lb-btn{position:absolute;background:none;border:none;color:#fff;cursor:pointer;
+line-height:1;padding:10px;opacity:.7;transition:opacity .2s ease}
+.spg-lb-btn:hover{opacity:1}
+.spg-lb-btn[hidden]{display:none}
+.spg-lb-close{top:16px;right:22px;font-size:38px}
+.spg-lb-prev,.spg-lb-next{top:50%;margin-top:-30px;font-size:56px}
+.spg-lb-prev{left:14px}
+.spg-lb-next{right:14px}
+.spg-lb-count{position:absolute;bottom:18px;left:0;right:0;margin:0;text-align:center;
+color:#fff;opacity:.6;font-size:12px;letter-spacing:.12em}
+
 @media(max-width:1024px){.spg-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:900px){.spg-single{grid-template-columns:1fr;gap:36px;padding:40px 20px}
 .spg-text{position:static}}
 @media(max-width:640px){.spg-grid{grid-template-columns:1fr}.spg-card-title{font-size:15px}}
 @media(max-width:560px){.spg-images{grid-template-columns:1fr}
 .spg-image-wrap:last-child:nth-child(3n+1){aspect-ratio:4/3}}
+@media(max-width:640px){.spg-lightbox{padding:14px}
+.spg-lb-close{font-size:30px;top:6px;right:10px}
+.spg-lb-prev,.spg-lb-next{font-size:38px;margin-top:-22px}}
 ';
 }

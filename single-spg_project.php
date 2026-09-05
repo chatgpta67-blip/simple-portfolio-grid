@@ -22,13 +22,17 @@ while ( have_posts() ) :
 			<?php
 			if ( $ids ) {
 				foreach ( array_values( $ids ) as $i => $id ) {
-					$dir = ( 0 === $i % 2 ) ? 1 : -1;
-					echo '<div class="spg-image-wrap"><div class="spg-parallax-layer" data-spg-dir="' . esc_attr( $dir ) . '">'
+					$dir  = ( 0 === $i % 2 ) ? 1 : -1;
+					$full = wp_get_attachment_image_url( $id, 'full' );
+					$open = $full ? ' data-spg-full="' . esc_url( $full ) . '" role="button" tabindex="0"' : '';
+					echo '<div class="spg-image-wrap"' . $open . '><div class="spg-parallax-layer" data-spg-dir="' . esc_attr( $dir ) . '">'
 						. wp_get_attachment_image( $id, 'large', false, array( 'loading' => 'lazy' ) )
 						. '</div></div>';
 				}
 			} elseif ( has_post_thumbnail() ) {
-				echo '<div class="spg-image-wrap"><div class="spg-parallax-layer" data-spg-dir="1">'
+				$full = get_the_post_thumbnail_url( get_the_ID(), 'full' );
+				$open = $full ? ' data-spg-full="' . esc_url( $full ) . '" role="button" tabindex="0"' : '';
+				echo '<div class="spg-image-wrap"' . $open . '><div class="spg-parallax-layer" data-spg-dir="1">'
 					. get_the_post_thumbnail( get_the_ID(), 'large' )
 					. '</div></div>';
 			}
