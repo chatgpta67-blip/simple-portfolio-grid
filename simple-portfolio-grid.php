@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Simple Portfolio Grid
  * Description:       Add projects with a title, a thumbnail, content and images. Shows a responsive grid via the [portfolio] shortcode, and an editorial page for each project (banner, gallery left, story right).
- * Version:           1.9.1
+ * Version:           1.10.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            pravinregi
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SPG_VERSION', '1.9.1' );
+define( 'SPG_VERSION', '1.10.0' );
 
 /* ------------------------------------------------------------------
  * Self-hosted updates via GitHub. To ship a new version: bump the
@@ -315,100 +315,54 @@ JS;
 
 add_shortcode( 'portfolio', function ( $atts ) {
 
-	$atts = shortcode_atts( array( 'columns' => 3 ), $atts, 'portfolio' );
+	$atts = shortcode_atts( array( 'columns' => 3, 'type' => '' ), $atts, 'portfolio' );
 
-	$tabs = array(
-		'commercial'  => __( 'Commercial', 'simple-portfolio-grid' ),
-		'residential' => __( 'Residential', 'simple-portfolio-grid' ),
+	$args = array(
+		'post_type'      => 'spg_project',
+		'posts_per_page' => -1,
+		'orderby'        => 'menu_order date',
+		'order'          => 'ASC',
 	);
 
-	$panels = array();
+	// type="" shows every project; otherwise one or more Project Type slugs.
+	$types = array_filter( array_map( 'sanitize_title', explode( ',', $atts['type'] ) ) );
 
-	foreach ( $tabs as $slug => $label ) {
-
-		$q = new WP_Query( array(
-			'post_type'      => 'spg_project',
-			'posts_per_page' => -1,
-			'orderby'        => 'menu_order date',
-			'order'          => 'ASC',
-			'tax_query'      => array(
-				array(
-					'taxonomy' => 'spg_project_type',
-					'field'    => 'slug',
-					'terms'    => $slug,
-				),
+	if ( $types ) {
+		$args['tax_query'] = array(
+			array(
+				'taxonomy' => 'spg_project_type',
+				'field'    => 'slug',
+				'terms'    => $types,
 			),
-		) );
-
-		// A category with nothing in it gets no tab at all, so the grid never opens
-		// on an empty panel.
-		if ( ! $q->have_posts() ) {
-			wp_reset_postdata();
-			continue;
-		}
-
-		ob_start();
-		echo '<div class="spg-grid" style="--spg-cols:' . (int) $atts['columns'] . ';">';
-
-		$i = 0;
-		while ( $q->have_posts() ) {
-			$q->the_post();
-			$dir = ( 0 === $i % 2 ) ? 1 : -1;
-			echo '<a class="spg-card" href="' . esc_url( get_permalink() ) . '">';
-			if ( has_post_thumbnail() ) {
-				echo '<span class="spg-parallax-layer" data-spg-dir="' . esc_attr( $dir ) . '">' . get_the_post_thumbnail( get_the_ID(), 'large' ) . '</span>';
-			}
-			echo '<span class="spg-card-overlay"></span>';
-			echo '<span class="spg-card-title">' . esc_html( get_the_title() ) . '</span>';
-			echo '</a>';
-			$i++;
-		}
-
-		echo '</div>';
-
-		wp_reset_postdata();
-		$panels[ $slug ] = ob_get_clean();
+		);
 	}
 
-	if ( ! $panels ) {
+	$q = new WP_Query( $args );
+
+	if ( ! $q->have_posts() ) {
+		wp_reset_postdata();
 		return '';
 	}
 
-	// Radio + label rather than buttons: switching is done entirely in CSS, so the
-	// tabs keep working if this theme never runs the script, and a click can never
-	// navigate the way a stray button in a themes form can.
-	$uid = wp_unique_id( 'spg-tabs-' );
-
 	ob_start();
-	echo '<div class="spg-tabs">';
+	echo '<div class="spg-grid" style="--spg-cols:' . (int) $atts['columns'] . ';">';
 
 	$i = 0;
-	foreach ( $panels as $slug => $html ) {
-		printf(
-			'<input type="radio" class="spg-tab-input" name="%1$s" id="%1$s-%2$s" data-spg-tab="%2$s"%3$s />',
-			esc_attr( $uid ),
-			esc_attr( $slug ),
-			( 0 === $i ) ? ' checked="checked"' : ''
-		);
+	while ( $q->have_posts() ) {
+		$q->the_post();
+		$dir = ( 0 === $i % 2 ) ? 1 : -1;
+		echo '<a class="spg-card" href="' . esc_url( get_permalink() ) . '">';
+		if ( has_post_thumbnail() ) {
+			echo '<span class="spg-parallax-layer" data-spg-dir="' . esc_attr( $dir ) . '">' . get_the_post_thumbnail( get_the_ID(), 'large' ) . '</span>';
+		}
+		echo '<span class="spg-card-overlay"></span>';
+		echo '<span class="spg-card-title">' . esc_html( get_the_title() ) . '</span>';
+		echo '</a>';
 		$i++;
 	}
 
-	echo '<div class="spg-tab-nav">';
-	foreach ( $panels as $slug => $html ) {
-		printf(
-			'<label class="spg-tab-btn" for="%1$s-%2$s">%3$s</label>',
-			esc_attr( $uid ),
-			esc_attr( $slug ),
-			esc_html( $tabs[ $slug ] )
-		);
-	}
 	echo '</div>';
-
-	foreach ( $panels as $slug => $html ) {
-		echo '<div class="spg-tab-panel" data-spg-panel="' . esc_attr( $slug ) . '">' . $html . '</div>';
-	}
-
-	echo '</div>';
+	wp_reset_postdata();
 
 	return ob_get_clean();
 } );
@@ -798,25 +752,11 @@ transform:translate3d(0,0,0);backface-visibility:hidden}
 @media(hover:hover){.spg-card .spg-parallax-layer img{transition:scale .6s ease}
 .spg-card:hover .spg-parallax-layer img{scale:1.06}
 .spg-card:hover .spg-card-overlay{background:rgba(0,0,0,.45)}}
-.spg-card,.spg-shot,.spg-tab-btn,.spg-lb-btn,.spg-stage-open,.spg-stage-nav button{
+.spg-card,.spg-shot,.spg-lb-btn,.spg-stage-open,.spg-stage-nav button{
 touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .spg-card-title{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
 text-align:center;padding:0 18px;color:#fff;font-size:17px;font-weight:600;letter-spacing:.14em;
 text-transform:uppercase;line-height:1.35}
-
-/* Commercial / Residential tabs, switched with :checked so no script is needed */
-.spg-tab-input{position:absolute;width:1px;height:1px;opacity:0}
-.spg-tab-nav{display:flex;gap:8px;margin-bottom:28px;border-bottom:1px solid rgba(0,0,0,.12)}
-.spg-tab-btn{display:inline-block;cursor:pointer;padding:12px 22px;
-font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:inherit;opacity:.5;
-border-bottom:2px solid transparent;margin-bottom:-1px;transition:opacity .3s ease,border-color .3s ease}
-.spg-tab-btn:hover{opacity:.8}
-.spg-tab-panel{display:none}
-.spg-tab-input[data-spg-tab="commercial"]:checked ~ .spg-tab-panel[data-spg-panel="commercial"],
-.spg-tab-input[data-spg-tab="residential"]:checked ~ .spg-tab-panel[data-spg-panel="residential"]{display:block}
-.spg-tab-input[data-spg-tab="commercial"]:checked ~ .spg-tab-nav label[for$="-commercial"],
-.spg-tab-input[data-spg-tab="residential"]:checked ~ .spg-tab-nav label[for$="-residential"]{opacity:1;border-color:currentColor}
-.spg-tab-input:focus-visible ~ .spg-tab-nav{outline:2px solid var(--spg-accent);outline-offset:4px}
 
 /* single project page.
    Scoped to .spg-project, and the properties themes most often reset (type,

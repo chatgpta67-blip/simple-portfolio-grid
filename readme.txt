@@ -4,11 +4,11 @@ Tags: portfolio, gallery, projects, grid, showcase
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.9.1
+Stable tag: 1.10.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Add projects with a title, thumbnail, content and images. Shows a Commercial/Residential tabbed grid via a shortcode, and a two-column page for each project.
+Add projects with a title, thumbnail, content and images. Shows a filterable grid via a shortcode, and an editorial page for each project.
 
 == Description ==
 
@@ -17,7 +17,7 @@ Simple Portfolio Grid adds a lightweight "Projects" post type to WordPress, so y
 **Features**
 
 * A "Projects" post type with title, content, featured image, and a gallery of extra images.
-* Each project is tagged Commercial or Residential; the `[portfolio]` shortcode renders both as switchable tabs.
+* Each project is tagged Commercial or Residential, and the shortcode can show one type or all of them.
 * A drag-to-reorder image picker built on the native WordPress media library — no new uploader to learn.
 * Project thumbnails and the images on each project's page have a subtle scroll-parallax effect.
 * Each project gets an automatic page: up to three images on one side, title/content on the other.
@@ -27,16 +27,20 @@ Simple Portfolio Grid adds a lightweight "Projects" post type to WordPress, so y
 
 1. Add projects from the new "Projects" menu in wp-admin.
 2. Upload a featured image, write your content, and use "Add / edit images" to pick the images shown on the project's page.
-3. Place `[portfolio]` on any page to show the grid. Use `[portfolio columns="4"]` to change the number of columns (default 3).
+3. Place `[portfolio type="commercial"]` on your Commercial page and `[portfolio type="residential"]` on your Residential page. Plain `[portfolio]` shows every project. Use `columns="4"` to change the number of columns (default 3).
 
 == Installation ==
 
 1. Upload the plugin folder to `/wp-content/plugins/`, or install it through Plugins → Add New in wp-admin.
 2. Activate the plugin through the 'Plugins' screen.
 3. Add your first project from the new "Projects" menu.
-4. Add the `[portfolio]` shortcode to any page to display the grid.
+4. Add the `[portfolio type="commercial"]` shortcode to a page to display that grid.
 
 == Frequently Asked Questions ==
+
+= How do I show only one kind of project? =
+
+Pass the Project Type slug: `[portfolio type="commercial"]` or `[portfolio type="residential"]`. Several at once work too, e.g. `type="commercial,residential"`. Leave it off to show everything.
 
 = How do I change the number of grid columns? =
 
@@ -57,6 +61,9 @@ It links to a page with the slug `featuredworks` if one exists, otherwise it fal
 3. The image picker in the Projects editor.
 
 == Changelog ==
+
+= 1.10.0 =
+* Replaced the Commercial / Residential tabs with a type attribute, so `[portfolio type="commercial"]` and `[portfolio type="residential"]` can live on their own pages. Plain `[portfolio]` shows every project.
 
 = 1.9.1 =
 * The project page now uses the site typefaces rather than Georgia and Arial: headings in the display serif the theme already names, body text in the sans the theme loads. Both are set through CSS variables so they can be changed in one line.
