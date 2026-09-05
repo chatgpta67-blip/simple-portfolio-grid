@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Simple Portfolio Grid
  * Description:       Add projects with a title, a thumbnail, content and images. Shows a responsive grid via the [portfolio] shortcode, and an editorial page for each project (banner, gallery left, story right).
- * Version:           1.8.2
+ * Version:           1.9.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            pravinregi
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SPG_VERSION', '1.8.2' );
+define( 'SPG_VERSION', '1.9.0' );
 
 /* ------------------------------------------------------------------
  * Self-hosted updates via GitHub. To ship a new version: bump the
@@ -714,10 +714,6 @@ function spg_frontend_js() {
 		open( current );
 	} );
 
-	gallery.querySelector( '.spg-gallery-btn' ).addEventListener( 'click', function () {
-		open( current );
-	} );
-
 	setStage( 0 );
 
 	closeBtn.addEventListener( 'click', close );
@@ -787,7 +783,7 @@ transform:translate3d(0,0,0);backface-visibility:hidden}
 @media(hover:hover){.spg-card .spg-parallax-layer img{transition:scale .6s ease}
 .spg-card:hover .spg-parallax-layer img{scale:1.06}
 .spg-card:hover .spg-card-overlay{background:rgba(0,0,0,.45)}}
-.spg-card,.spg-shot,.spg-tab-btn,.spg-gallery-btn,.spg-lb-btn,.spg-stage-open,.spg-stage-nav button{
+.spg-card,.spg-shot,.spg-tab-btn,.spg-lb-btn,.spg-stage-open,.spg-stage-nav button{
 touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .spg-card-title{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
 text-align:center;padding:0 18px;color:#fff;font-size:17px;font-weight:600;letter-spacing:.14em;
@@ -875,12 +871,6 @@ cursor:pointer;transition:transform .2s ease,opacity .2s ease}
 .spg-thumb{height:clamp(96px,9vw,128px)}
 .spg-shot.is-current{opacity:.72}
 
-.spg-project .spg-gallery-btn{display:inline-flex;align-items:center;justify-content:space-between;
-width:210px;margin-top:14px!important;padding:13px 17px!important;
-border:1px solid var(--spg-accent)!important;border-radius:30px!important;background:none!important;
-color:var(--spg-accent-ink)!important;font-family:Arial,Helvetica,sans-serif!important;
-font-size:13px!important;line-height:1!important;letter-spacing:normal!important;
-text-transform:none!important;cursor:pointer;transition:background .25s ease}
 
 .spg-copy{padding-top:12px;min-width:0}
 .spg-project .spg-heading{max-width:510px;margin:0 0 26px!important;padding:0!important;
@@ -923,7 +913,6 @@ text-transform:uppercase!important;text-decoration:none!important;background:non
 
 @media(hover:hover){.spg-thumb:hover{transform:translateY(-3px)}
 .spg-project .spg-stage-nav button:hover{background:rgba(40,35,30,.6)!important}
-.spg-project .spg-gallery-btn:hover{background:rgba(143,119,107,.1)!important}
 .spg-project .spg-back:hover{color:var(--spg-ink)!important}}
 
 /* full-image popup */
@@ -980,7 +969,6 @@ transition:opacity .2s ease;animation:spg-spin .8s linear infinite}
 .spg-project .spg-body,.spg-project .spg-body > *{font-size:16px!important}
 .spg-project .spg-statement,.spg-project .spg-statement p{font-size:17px!important}
 .spg-project .spg-statement{padding:20px!important;gap:14px}
-.spg-project .spg-gallery-btn{width:100%}
 .spg-project .spg-back{margin-top:40px!important}}
 
 @media(max-width:380px){.spg-project .spg-title{font-size:38px!important}

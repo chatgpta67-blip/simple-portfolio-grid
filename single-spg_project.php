@@ -50,8 +50,9 @@ while ( have_posts() ) :
 	$heading  = get_post_meta( $post_id, 'spg_heading', true );
 	$callout  = get_post_meta( $post_id, 'spg_callout', true );
 
-	$sides  = array_slice( $images, 1, 2, true );
-	$thumbs = array_slice( $images, 3, 8, true );
+	$sides = array_slice( $images, 1, 2, true );
+	// Everything past the hero and the two side shots, however many that is.
+	$thumbs = array_slice( $images, 3, null, true );
 	?>
 
 	<div class="spg-project">
@@ -110,11 +111,6 @@ while ( have_posts() ) :
 							<?php endif; ?>
 
 						</div>
-
-						<button type="button" class="spg-gallery-btn">
-							<?php esc_html_e( 'View Full Gallery', 'simple-portfolio-grid' ); ?>
-							<span aria-hidden="true">&rarr;</span>
-						</button>
 					</div>
 				<?php endif; ?>
 
