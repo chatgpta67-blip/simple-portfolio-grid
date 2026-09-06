@@ -4,7 +4,7 @@ Tags: portfolio, gallery, projects, grid, showcase
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.11.0
+Stable tag: 1.11.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -61,6 +61,10 @@ It links to a page with the slug `featuredworks` if one exists, otherwise it fal
 3. The image picker in the Projects editor.
 
 == Changelog ==
+
+= 1.11.1 =
+* Fixed grid cards showing as empty grey boxes when an image optimiser lazy-loads them: the thumbnails now opt out of third-party lazy loading and keep the browser native kind.
+* Removed the "Featured Works" label above the project title.
 
 = 1.11.0 =
 * Restyled the project cards to the supplied design: wide short banners in a three-across grid, darkened images that brighten and lift slightly on hover, and centred uppercase titles.

@@ -60,7 +60,6 @@ while ( have_posts() ) :
 
 			<section class="spg-hero">
 				<div class="spg-hero-head">
-					<p class="spg-eyebrow"><?php esc_html_e( 'Featured Works', 'simple-portfolio-grid' ); ?></p>
 					<h1 class="spg-title"><?php the_title(); ?></h1>
 					<?php if ( $subtitle ) : ?>
 						<p class="spg-subtitle"><?php echo esc_html( $subtitle ); ?></p>

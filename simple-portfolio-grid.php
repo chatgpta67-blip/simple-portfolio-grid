@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Simple Portfolio Grid
  * Description:       Add projects with a title, a thumbnail, content and images. Shows a responsive grid via the [portfolio] shortcode, and an editorial page for each project (banner, gallery left, story right).
- * Version:           1.11.0
+ * Version:           1.11.1
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            pravinregi
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SPG_VERSION', '1.11.0' );
+define( 'SPG_VERSION', '1.11.1' );
 
 /* ------------------------------------------------------------------
  * Self-hosted updates via GitHub. To ship a new version: bump the
@@ -361,7 +361,18 @@ add_shortcode( 'portfolio', function ( $atts ) {
 		$dir = ( 0 === $i % 2 ) ? 1 : -1;
 		echo '<a class="spg-card" href="' . esc_url( get_permalink() ) . '">';
 		if ( has_post_thumbnail() ) {
-			echo '<span class="spg-parallax-layer" data-spg-dir="' . esc_attr( $dir ) . '">' . get_the_post_thumbnail( get_the_ID(), 'large' ) . '</span>';
+			// skip-lazy keeps third-party lazy loaders off these: EWWW swaps the src
+			// for a grey base64 placeholder and never restores it inside the card, so
+			// the grid renders as empty grey boxes. Native loading="lazy" still applies.
+			$thumb = get_the_post_thumbnail(
+				get_the_ID(),
+				'large',
+				array(
+					'class'   => 'attachment-large size-large wp-post-image skip-lazy',
+					'loading' => 'lazy',
+				)
+			);
+			echo '<span class="spg-parallax-layer" data-spg-dir="' . esc_attr( $dir ) . '">' . $thumb . '</span>';
 		}
 		echo '<span class="spg-card-overlay"></span>';
 		echo '<span class="spg-card-title">' . esc_html( get_the_title() ) . '</span>';
@@ -748,7 +759,6 @@ function spg_css() {
 --spg-sans:"Montserrat",Arial,Helvetica,sans-serif}
 
 /* grid */
-.spg-grid{display:grid;grid-template-columns:repeat(var(--spg-cols,3),1fr);gap:24px}
 .spg-portfolio{width:min(1100px,calc(100% - 48px));margin:34px auto 80px}
 .spg-portfolio .spg-section-title{margin:0 0 18px!important;padding:0!important;
 font-family:var(--spg-serif)!important;font-size:clamp(36px,4.2vw,50px)!important;
